@@ -8,6 +8,8 @@ Config.keybind = {
 }
 
 Config.syncDistance = 3.0
+Config.syncInviteTTL = 10000
+Config.syncCooldown = 3000
 Config.persistAppearance = true
 Config.cancelControl = 73 -- X
 

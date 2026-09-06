@@ -1,5 +1,5 @@
 local emotes = {}
-local active = { name = nil, props = {}, controls = nil }
+local active = { name = nil, props = {}, controls = nil, syncPartner = nil }
 local menuOpen = false
 local lastEmote = nil
 local activeWalkClip = nil
@@ -29,15 +29,18 @@ local function clearProps(props)
     for _, prop in ipairs(props or active.props) do pcall(QB.anim.detachProp, prop) end
 end
 
-local function cancelEmote(silent)
+local function cancelEmote(silent, skipSyncNotice)
     local wasActive = active.name ~= nil
     local previous = active
     if previous.controls then QB.controls.release(previous.controls) end
     clearProps(previous.props)
-    active = { name = nil, props = {}, controls = nil }
+    active = { name = nil, props = {}, controls = nil, syncPartner = nil }
     local ped = PlayerPedId()
     if DoesEntityExist(ped) then QB.anim.clear(ped, true) end
     setState('active', false)
+    if previous.syncPartner and not skipSyncNotice then
+        TriggerServerEvent('qbemotemenu:server:cancelSync')
+    end
     if wasActive and not silent then notify('Emote cancelled.') end
     return wasActive
 end
@@ -215,9 +218,34 @@ RegisterCommand('expression', function(_, args)
     if not ok then notify(err, 'error') end
 end, false)
 
-RegisterNetEvent('qbemotemenu:client:playSynced', function(name)
+RegisterNetEvent('qbemotemenu:client:syncInvite', function(inviteId, playerName, emoteLabel)
+    CreateThread(function()
+        if not canUse() then
+            TriggerServerEvent('qbemotemenu:server:respondSync', inviteId, false)
+            return
+        end
+        local result = QB.nui.openAlert({
+            title = 'Shared emote request',
+            message = ('%s wants to perform %s with you.'):format(playerName, emoteLabel),
+            confirmLabel = 'Accept',
+            cancelLabel = 'Decline',
+        })
+        TriggerServerEvent('qbemotemenu:server:respondSync', inviteId, result ~= nil and result.confirmed == true and canUse())
+    end)
+end)
+
+RegisterNetEvent('qbemotemenu:client:playSynced', function(name, partner)
     local ok, err = playLocal(name)
-    if not ok then notify(err, 'error') end
+    if not ok then
+        TriggerServerEvent('qbemotemenu:server:cancelSync')
+        notify(err, 'error')
+        return
+    end
+    active.syncPartner = partner
+end)
+
+RegisterNetEvent('qbemotemenu:client:cancelSynced', function(partner)
+    if active.syncPartner == partner then cancelEmote(true, true) end
 end)
 
 exports('toggleMenu', openMenu)
