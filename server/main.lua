@@ -9,10 +9,10 @@ local function validSync(source, target, emoteName)
     if not target or target % 1 ~= 0 or target <= 0 or target == source then return false, 'Choose another nearby player.' end
     local emote = QBEEmotes[emoteName]
     if not emote or not emote.sync or not QBEEmotes[emote.sync.partner] then return false, 'That shared emote is unavailable.' end
-    local sourcePed, targetPed = GetPlayerPed(source), GetPlayerPed(target)
-    if sourcePed == 0 or targetPed == 0 then return false, 'That player is no longer available.' end
-    if GetPlayerRoutingBucket(source) ~= GetPlayerRoutingBucket(target) then return false, 'That player is in another instance.' end
-    if #(GetEntityCoords(sourcePed) - GetEntityCoords(targetPed)) > Config.syncDistance then return false, 'That player is too far away.' end
+    local _, reason = QB.world.resolveNearbyPlayer(source, target, { maxDistance = Config.syncDistance })
+    if reason == 'routing_bucket_mismatch' then return false, 'That player is in another instance.' end
+    if reason == 'too_far' then return false, 'That player is too far away.' end
+    if type(reason) ~= 'number' then return false, 'That player is no longer available.' end
     return true, emote
 end
 
