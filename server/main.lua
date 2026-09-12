@@ -1,12 +1,12 @@
 local pendingBySource = {}
 local pendingByTarget = {}
 local activePartner = {}
-local lastRequestAt = {}
+local requestCooldown = QB.timers.cooldown(Config.syncCooldown)
 local nextInviteId = 0
 
 local function validSync(source, target, emoteName)
     target = tonumber(target)
-    if not target or target % 1 ~= 0 or target <= 0 or target == source then return false, 'Choose another nearby player.' end
+    if not QB.util.isInteger(target) or target <= 0 or target == source then return false, 'Choose another nearby player.' end
     local emote = QBEEmotes[emoteName]
     if not emote or not emote.sync or not QBEEmotes[emote.sync.partner] then return false, 'That shared emote is unavailable.' end
     local _, reason = QB.world.resolveNearbyPlayer(source, target, { maxDistance = Config.syncDistance })
@@ -19,9 +19,8 @@ end
 RegisterNetEvent('qbemotemenu:server:sync', function(target, emoteName)
     local source = source
     if type(emoteName) ~= 'string' then return end
+    if not requestCooldown.use(source) then return end
     local current = GetGameTimer()
-    if lastRequestAt[source] and current - lastRequestAt[source] < Config.syncCooldown then return end
-    lastRequestAt[source] = current
     local ok, emoteOrReason = validSync(source, target, emoteName:lower())
     if not ok then
         return QB.notify.send(source, { title = 'Emotes', message = emoteOrReason, type = 'error' })
@@ -87,7 +86,7 @@ end)
 
 AddEventHandler('playerDropped', function()
     local source = source
-    lastRequestAt[source] = nil
+    requestCooldown.reset(source)
     local invite = pendingBySource[source] or pendingByTarget[source]
     if invite then
         pendingBySource[invite.source] = nil

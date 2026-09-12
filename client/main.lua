@@ -8,13 +8,7 @@ local function notify(message, kind)
     QB.notify.send({ title = 'Emotes', message = message, type = kind or 'info' })
 end
 
-local function copy(value)
-    local result = {}
-    for key, entry in pairs(value) do result[key] = entry end
-    return result
-end
-
-for name, emote in pairs(QBEEmotes) do emotes[name] = copy(emote) end
+for name, emote in pairs(QBEEmotes) do emotes[name] = QB.util.deepClone(emote) end
 
 local function setState(key, value)
     LocalPlayer.state:set(('qbemotemenu:%s'):format(key), value, true)
