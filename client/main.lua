@@ -269,8 +269,17 @@ CreateThread(function()
         if expression and Config.expressions[expression] then setExpression(expression, true) end
     end
     while true do
-        Wait(0)
-        if active.name and (not canUse() or IsControlJustPressed(0, Config.cancelControl) or IsPedRagdoll(PlayerPedId())) then cancelEmote(true) end
+        -- Cancellation has to remain frame-accurate while an emote is playing,
+        -- but there is nothing to poll while idle.  Keeping the resource asleep
+        -- then avoids a permanent per-frame resmon entry for every player.
+        if active.name then
+            if not canUse() or IsControlJustPressed(0, Config.cancelControl) or IsPedRagdoll(PlayerPedId()) then
+                cancelEmote(true)
+            end
+            Wait(0)
+        else
+            Wait(500)
+        end
     end
 end)
 
