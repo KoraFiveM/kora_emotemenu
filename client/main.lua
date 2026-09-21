@@ -109,12 +109,12 @@ local function setWalk(name, quiet)
     if walk.clipset then
         local loaded, err = QB.stream.loadClipSet(walk.clipset)
         if not loaded then return false, err or 'The walk style could not be loaded.' end
-        if activeWalkClip and activeWalkClip ~= walk.clipset then RemoveAnimSet(activeWalkClip) end
+        if activeWalkClip and activeWalkClip ~= walk.clipset then RemoveClipSet(activeWalkClip) end
         SetPedMovementClipset(ped, walk.clipset, 0.25)
         activeWalkClip = walk.clipset
     else
         ResetPedMovementClipset(ped, 0.25)
-        if activeWalkClip then RemoveAnimSet(activeWalkClip) end
+        if activeWalkClip then RemoveClipSet(activeWalkClip) end
         activeWalkClip = nil
     end
     setState('walk', name)
@@ -286,6 +286,6 @@ end)
 AddEventHandler('onClientResourceStop', function(resource)
     if resource == GetCurrentResourceName() then
         cancelEmote(true)
-        if activeWalkClip then RemoveAnimSet(activeWalkClip) end
+        if activeWalkClip then RemoveClipSet(activeWalkClip) end
     end
 end)
