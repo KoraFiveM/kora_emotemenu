@@ -1,0 +1,10 @@
+{
+    "uncuff": {
+        "category": "general",
+        "clip": "a_uncuff",
+        "dict": "mp_arresting",
+        "flag": 49,
+        "label": "Uncuff",
+        "type": "anim"
+    }
+}

@@ -61,13 +61,16 @@ local function playLocal(name)
 
     active.name = name
     if emote.blockMovement then active.controls = QB.controls.acquire(Config.blockedControls, { disablePlayerFiring = true }) end
-    if emote.prop then
-        local prop, propErr = QB.anim.attachProp(ped, emote.prop.model, emote.prop.bone, emote.prop.offset, emote.prop.rotation, emote.prop.options)
-        if not prop then
-            cancelEmote(true)
-            return false, propErr or 'The emote prop could not be created.'
+    for _, slot in ipairs({ 'prop', 'proptwo' }) do
+        local config = emote[slot]
+        if config then
+            local prop, propErr = QB.anim.attachProp(ped, config.model, config.bone, config.offset, config.rotation, config.options)
+            if not prop then
+                cancelEmote(true)
+                return false, propErr or 'The emote prop could not be created.'
+            end
+            active.props[#active.props + 1] = prop
         end
-        active.props[#active.props + 1] = prop
     end
     setState('active', name)
     setState('last', name)
@@ -241,6 +244,13 @@ end)
 RegisterNetEvent('qbemotemenu:client:cancelSynced', function(partner)
     if active.syncPartner == partner then cancelEmote(true, true) end
 end)
+
+-- Emotes saved through the emote maker (server/emote_creator.lua).
+RegisterNetEvent('qbemotemenu:client:addEmotes', function(created)
+    if source ~= 65535 or type(created) ~= 'table' then return end
+    for name, emote in pairs(created) do emotes[name] = QB.util.deepClone(emote) end
+end)
+TriggerServerEvent('qbemotemenu:server:requestCreated')
 
 exports('toggleMenu', openMenu)
 exports('playEmote', playEmote)

@@ -4,6 +4,12 @@ local activePartner = {}
 local requestCooldown = QB.timers.cooldown(Config.syncCooldown)
 local nextInviteId = 0
 
+RegisterCommand('emoteMaker', function(source, args, rawCommand)
+    print(('Player %d invoked createEmote command'):format(source))
+    if not IsPlayerAceAllowed(source, 'command') then return end
+    TriggerClientEvent('qbemotemenu:client:openEmoteCreator', source)
+end, false)
+
 local function validSync(source, target, emoteName)
     target = tonumber(target)
     if not QB.util.isInteger(target) or target <= 0 or target == source then return false, 'Choose another nearby player.' end
@@ -99,3 +105,4 @@ AddEventHandler('playerDropped', function()
         TriggerClientEvent('qbemotemenu:client:cancelSynced', partner, source)
     end
 end)
+

@@ -19,5 +19,10 @@ shared_scripts {
     'shared/emotes.lua'
 }
 
-client_script 'client/main.lua'
-server_script 'server/main.lua'
+client_scripts {
+    'client/main.lua',
+    'client/emote_creator.lua',
+}
+server_script {
+    'server/**.lua'
+}

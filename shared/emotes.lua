@@ -63,3 +63,15 @@ QBEEmotes = {
         dict = 'mp_ped_interaction', clip = 'kisses_guy_b', flag = 0,
     },
 }
+
+-- Emotes saved in-game through the emote maker (server/emote_creator.lua) live
+-- in shared/created.json. They are merged into the catalogue here at load; the
+-- built-in emotes win on a name clash. The file is only read on the server -
+-- clients receive the same set from the server when they load, so they never
+-- depend on a file that changes at runtime.
+if IsDuplicityVersion() then
+    QBECreatedEmotes = json.decode(LoadResourceFile(GetCurrentResourceName(), 'shared/created.json') or '{}') or {}
+    for name, emote in pairs(QBECreatedEmotes) do
+        if QBEEmotes[name] == nil then QBEEmotes[name] = emote end
+    end
+end
