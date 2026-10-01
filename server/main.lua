@@ -32,7 +32,9 @@ RegisterNetEvent('qbemotemenu:server:sync', function(target, emoteName)
         return QB.notify.send(source, { title = 'Emotes', message = emoteOrReason, type = 'error' })
     end
     target = tonumber(target)
-    if pendingBySource[source] or pendingByTarget[target] or activePartner[source] or activePartner[target] then
+    if pendingBySource[source] or pendingByTarget[source]
+        or pendingBySource[target] or pendingByTarget[target]
+        or activePartner[source] or activePartner[target] then
         return QB.notify.send(source, { title = 'Emotes', message = 'One of you is already handling a shared emote.', type = 'error' })
     end
 
