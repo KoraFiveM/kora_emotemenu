@@ -3,6 +3,7 @@ local active = { name = nil, props = {}, controls = nil, syncPartner = nil }
 local menuOpen = false
 local lastEmote = nil
 local activeWalkClip = nil
+local cancelMonitorRunning = false
 
 local function notify(message, kind)
     QB.notify.send({ title = 'Emotes', message = message, type = kind or 'info' })
@@ -37,6 +38,20 @@ local function cancelEmote(silent, skipSyncNotice)
     end
     if wasActive and not silent then notify('Emote cancelled.') end
     return wasActive
+end
+
+local function startCancelMonitor()
+    if cancelMonitorRunning then return end
+    cancelMonitorRunning = true
+    CreateThread(function()
+        while active.name do
+            if not canUse() or IsControlJustPressed(0, Config.cancelControl) or IsPedRagdoll(PlayerPedId()) then
+                cancelEmote(true)
+            end
+            Wait(0)
+        end
+        cancelMonitorRunning = false
+    end)
 end
 
 local function playLocal(name)
@@ -75,6 +90,7 @@ local function playLocal(name)
     setState('active', name)
     setState('last', name)
     lastEmote = name
+    startCancelMonitor()
     return true
 end
 
@@ -277,19 +293,6 @@ CreateThread(function()
         local walk, expression = GetResourceKvpString('walk'), GetResourceKvpString('expression')
         if walk and Config.walks[walk] then setWalk(walk, true) end
         if expression and Config.expressions[expression] then setExpression(expression, true) end
-    end
-    while true do
-        -- Cancellation has to remain frame-accurate while an emote is playing,
-        -- but there is nothing to poll while idle.  Keeping the resource asleep
-        -- then avoids a permanent per-frame resmon entry for every player.
-        if active.name then
-            if not canUse() or IsControlJustPressed(0, Config.cancelControl) or IsPedRagdoll(PlayerPedId()) then
-                cancelEmote(true)
-            end
-            Wait(0)
-        else
-            Wait(500)
-        end
     end
 end)
 
