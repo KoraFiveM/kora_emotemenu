@@ -1,12 +1,12 @@
-# qbemotemenu
+# kora_emotemenu
 
-`qbemotemenu` is a from-scratch, qblib-native emote resource. It uses qblib's
+`kora_emotemenu` is a from-scratch, qblib-native emote resource. It uses kora_lib's
 radial NUI, keybinds, animation/prop ownership, streaming, notifications,
 controls and state bags rather than shipping a separate menu framework.
 
 ## Install
 
-Add `ensure qbemotemenu` after `ensure qblib` in `server.cfg`. The default
+Add `ensure kora_emotemenu` after `ensure kora_lib` in `server.cfg`. The default
 open key is `F3`; players can rebind it in FiveM settings. Use `/emotes` (or
 `/e <name>`) to open/play an emote and `/cancel` to stop one.
 
@@ -17,7 +17,7 @@ in `shared/emotes.lua`. Add your own assets there or register them from another
 client resource:
 
 ```lua
-exports.qbemotemenu:registerEmote('my_emote', {
+exports.kora_emotemenu:registerEmote('my_emote', {
     label = 'My emote', category = 'general', type = 'anim',
     dict = 'my_anim_dict', clip = 'my_clip', flag = 49,
 })

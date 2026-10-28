@@ -44,5 +44,5 @@ Config.expressions = {
     stressed = { label = 'Stressed', anim = 'mood_stressed_1', dict = 'facials@gen_male@base' },
 }
 
--- Registers this resource-owned configuration with qblib without changing its public Config table.
+-- Registers this resource-owned configuration with kora_lib without changing its public Config table.
 if QB and QB.config and QB.config.adopt then Config = QB.config.adopt(Config) end

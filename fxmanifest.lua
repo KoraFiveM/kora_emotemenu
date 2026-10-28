@@ -3,16 +3,18 @@ game 'gta5'
 lua54 'yes'
 use_experimental_fxv2_oal 'yes'
 
-name 'qbemotemenu'
+name 'kora_emotemenu'
+-- Keep the legacy resource name resolvable for exports['qbemotemenu'] callers.
+provide 'qbemotemenu'
 author 'qbcore2'
 version '1.0.0'
 description 'A qblib-native, configurable FiveM emote menu.'
 
 dependencies {
-    'qblib'
+    'kora_lib'
 }
 
-shared_script '@qblib/init.lua'
+shared_script '@kora_lib/init.lua'
 
 shared_scripts {
     'config.lua',

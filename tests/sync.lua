@@ -1,5 +1,5 @@
 -- Run from this resource: lua tests/sync.lua [server/main.lua]
--- qblib and native boundaries are inert; these players are nearby and available.
+-- kora_lib and native boundaries are inert; these players are nearby and available.
 local serverPath = arg[1] or 'server/main.lua'
 local checks = 0
 local function equal(actual, expected, message)
@@ -20,7 +20,7 @@ local function host()
     }
     env.GetGameTimer = function() return now end
     env.IsDuplicityVersion = function() return true end
-    env.GetCurrentResourceName = function() return 'qbemotemenu' end
+    env.GetCurrentResourceName = function() return 'kora_emotemenu' end
     env.LoadResourceFile = function() return '{}' end
     env.json = { decode = function() return {} end }
     env.GetPlayerName = function(id) return 'Player ' .. id end
