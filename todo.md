@@ -1,0 +1,3 @@
+- make the appshell fire on change of input so i can see all changes
+- on close of menu for creator, make sure to clear all props and states
+- make command kora command compat
