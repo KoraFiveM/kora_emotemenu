@@ -4,8 +4,8 @@ local activePartner = {}
 local requestCooldown = QB.timers.cooldown(Config.syncCooldown)
 local nextInviteId = 0
 
+---TODO: make this a kora command
 RegisterCommand('emoteMaker', function(source, args, rawCommand)
-    print(('Player %d invoked createEmote command'):format(source))
     if not IsPlayerAceAllowed(source, 'command') then return end
     TriggerClientEvent('qbemotemenu:client:openEmoteCreator', source)
 end, false)

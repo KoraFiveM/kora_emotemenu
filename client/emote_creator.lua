@@ -521,7 +521,6 @@ RegisterNetEvent('qbemotemenu:client:openEmoteCreator', function()
     openMenu()
 end)
 
--- The server accepted and stored the emote: start a fresh one.
 RegisterNetEvent('qbemotemenu:client:emoteSaved', function()
     if source ~= 65535 then return end
     stopPreview()
