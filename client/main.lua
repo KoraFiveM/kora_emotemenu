@@ -203,7 +203,7 @@ local function visibleEmotes(category)
     local items = {}
     for name, emote in pairs(emotes) do
         if emote.category == category and not emote.hidden then
-            items[#items + 1] = { id = 'emote:' .. name, label = emote.label, icon = emote.icon or 'Smile' }
+            items[#items + 1] = { id = 'emote:' .. name, label = emote.label or name, icon = emote.icon or 'Smile' }
         end
     end
     table.sort(items, function(a, b) return a.label < b.label end)
@@ -212,7 +212,7 @@ end
 
 local function optionItems(values, prefix)
     local items = {}
-    for name, entry in pairs(values) do items[#items + 1] = { id = prefix .. name, label = entry.label, icon = 'Circle' } end
+    for name, entry in pairs(values or {}) do items[#items + 1] = { id = prefix .. name, label = entry.label or name, icon = 'Circle' } end
     table.sort(items, function(a, b) return a.label < b.label end)
     return items
 end
@@ -222,12 +222,14 @@ local function menuItems()
     for category, details in pairs(Config.categories) do
         local categoryItems = visibleEmotes(category)
         if #categoryItems > 0 then
-            items[#items + 1] = { id = 'category:' .. category, label = details.label, icon = details.icon, submenu = { title = details.label, items = categoryItems } }
+            items[#items + 1] = { id = 'category:' .. category, label = details.label or category, icon = details.icon, submenu = { title = details.label or category, items = categoryItems } }
         end
     end
     table.sort(items, function(a, b) return a.label < b.label end)
-    items[#items + 1] = { id = 'walk', label = 'Walk style', icon = 'Footprints', submenu = { title = 'Walk style', items = optionItems(Config.walks, 'walk:') } }
-    items[#items + 1] = { id = 'expression', label = 'Expression', icon = 'ScanFace', submenu = { title = 'Expression', items = optionItems(Config.expressions, 'expression:') } }
+    -- An option group with nothing in it would open as an empty page, so leave it out.
+    local walks, expressions = optionItems(Config.walks, 'walk:'), optionItems(Config.expressions, 'expression:')
+    if #walks > 0 then items[#items + 1] = { id = 'walk', label = 'Walk style', icon = 'Footprints', submenu = { title = 'Walk style', items = walks } } end
+    if #expressions > 0 then items[#items + 1] = { id = 'expression', label = 'Expression', icon = 'ScanFace', submenu = { title = 'Expression', items = expressions } } end
     items[#items + 1] = { id = 'cancel', label = 'Cancel emote', icon = 'CircleX', disabled = active.name == nil, description = active.name and 'Stop the current emote' or 'No emote is playing' }
     return items
 end
@@ -267,39 +269,70 @@ local function appNavigation(items)
             rows[1] = { id = item.id, label = item.label, description = item.description, icon = item.icon, action = { id = item.id, label = 'Select', disabled = item.disabled } }
         end
         local title = item.submenu and item.submenu.title or item.label
+        local block = { type = 'list', id = item.id .. ':list', searchable = item.submenu ~= nil, items = rows }
+        -- kora_lib wants a title on every empty block.
+        if #rows == 0 then block = { type = 'empty', id = item.id .. ':empty', title = title, description = 'Nothing to show here yet.' } end
         navigation[#navigation + 1] = {
             id = item.id, label = item.label, icon = item.icon,
-            content = { title = title, blocks = { { type = 'list', id = item.id .. ':list', searchable = item.submenu ~= nil, items = rows } } },
+            content = { title = title, blocks = { block } },
         }
     end
     return navigation
 end
 
+local appRegistered = false
+local appWarned = false
+
+-- Registration is validated by kora_lib and can throw, so it never runs unprotected.
+local function registerMenuApp()
+    if appRegistered then return true end
+    local ok, err = pcall(QB.nui.registerApp, {
+        id = MENU_APP_ID,
+        title = 'Emotes',
+        icon = 'Smile',
+        layout = 'compact',
+        navigation = { { id = 'empty', label = 'Emotes', content = { blocks = { { type = 'empty', title = 'Emotes', description = 'Open the emote menu to choose an emote.' } } } } },
+        onAction = function(actionId)
+            appSelection = actionId
+            return { close = true }
+        end,
+    })
+    if ok then appRegistered = true return true end
+    if not appWarned then
+        appWarned = true
+        print(('^3[kora_emotemenu] The App Shell menu style is unavailable (%s). Falling back to the radial style.^7'):format(tostring(err)))
+    end
+    return false
+end
+
+-- Returns nil when the app could not be used so the caller can fall back.
 local function openAppPages(items)
+    if not registerMenuApp() then return nil end
     appSelection = nil
-    QB.nui.updateApp(MENU_APP_ID, { navigation = appNavigation(items) })
+    local ok, err = pcall(QB.nui.updateApp, MENU_APP_ID, { navigation = appNavigation(items) })
+    if not ok then
+        appRegistered = false
+        if not appWarned then
+            appWarned = true
+            print(('^3[kora_emotemenu] The App Shell menu could not be updated (%s). Falling back to the radial style.^7'):format(tostring(err)))
+        end
+        return nil
+    end
     QB.nui.openApp(MENU_APP_ID)
     if not appSelection then return { cancelled = true } end
     return { selectedId = appSelection }
 end
 
-QB.nui.registerApp({
-    id = MENU_APP_ID,
-    title = 'Emotes',
-    icon = 'Smile',
-    layout = 'compact',
-    navigation = { { id = 'empty', label = 'Emotes', content = { blocks = { { type = 'empty', description = 'Open the emote menu to choose an emote.' } } } } },
-    onAction = function(actionId)
-        appSelection = actionId
-        return { close = true }
-    end,
-})
+registerMenuApp()
 
 -- Same items for every style; Config.menuStyle is read here so it can change live.
 local function openStyledMenu(items)
     local style = Config.menuStyle
     if style == 'context' then return openContextPages(items) end
-    if style == 'app' then return openAppPages(items) end
+    if style == 'app' then
+        local result = openAppPages(items)
+        if result then return result end
+    end
     return QB.nui.openRadialMenu(items, { radius = 165 })
 end
 
