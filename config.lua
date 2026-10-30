@@ -11,6 +11,11 @@ Config.keybind = {
 -- Read every time the menu opens, so changing it needs no restart.
 Config.menuStyle = 'radial'
 
+-- Per-emote prop tweaks, merged over shared/emotes.lua each time the emote plays.
+-- Example: Config.propOverrides.clipboard = { prop = { bone = 'PH_R_Hand', offset = { x = 0.0, y = 0.0, z = 0.0 } } }
+-- Use the key `proptwo` for a second prop. Only the fields you set are replaced.
+Config.propOverrides = {}
+
 Config.syncDistance = 3.0
 Config.syncInviteTTL = 10000
 Config.syncCooldown = 3000

@@ -23,7 +23,47 @@ local function canUse()
 end
 
 local function clearProps(props)
-    for _, prop in ipairs(props or active.props) do pcall(QB.anim.detachProp, prop) end
+    for _, prop in ipairs(props or active.props) do
+        if DoesEntityExist(prop) then
+            DetachEntity(prop, true, false)
+            DeleteEntity(prop)
+        end
+    end
+end
+
+-- Config.propOverrides[emoteName].prop / .proptwo is merged over the shared prop data.
+local function getPropConfig(name, slot)
+    local config = emotes[name][slot]
+    local override = Config.propOverrides and Config.propOverrides[name] and Config.propOverrides[name][slot]
+    if not config or not override then return config end
+    local merged = {}
+    for key, value in pairs(config) do merged[key] = value end
+    for key, value in pairs(override) do merged[key] = value end
+    return merged
+end
+
+-- QB.anim.attachProp only accepts bone names, but emotes saved by the emote maker
+-- store numeric bone ids (GetPedBoneIndex), so both forms are resolved here.
+local function attachProp(ped, config)
+    local bone = config.bone
+    local boneIndex = type(bone) == 'number' and GetPedBoneIndex(ped, bone) or GetEntityBoneIndexByName(ped, bone)
+    if boneIndex == -1 then return false, ('Bone %s does not exist on the ped.'):format(tostring(bone)) end
+
+    local offset, rotation, options = config.offset or {}, config.rotation or {}, config.options or {}
+    local prop
+    local loaded, err = QB.stream.loadModel(config.model, function(hash)
+        local created = CreateObjectNoOffset(hash, 0.0, 0.0, 0.0, false, false, false)
+        if created == 0 or not DoesEntityExist(created) then return end
+        AttachEntityToEntity(created, ped, boneIndex,
+            offset.x or 0.0, offset.y or 0.0, offset.z or 0.0,
+            rotation.x or 0.0, rotation.y or 0.0, rotation.z or 0.0,
+            true, options.softPin ~= false, options.collision == true, true,
+            options.vertexIndex or 1, options.fixedRot ~= false)
+        prop = created
+    end)
+    if not loaded then return false, err end
+    if not prop then return false, 'The emote prop could not be created.' end
+    return prop
 end
 
 local function cancelEmote(silent, skipSyncNotice)
@@ -79,9 +119,9 @@ local function playLocal(name)
     active.name = name
     if emote.blockMovement then active.controls = QB.controls.acquire(Config.blockedControls, { disablePlayerFiring = true }) end
     for _, slot in ipairs({ 'prop', 'proptwo' }) do
-        local config = emote[slot]
+        local config = getPropConfig(name, slot)
         if config then
-            local prop, propErr = QB.anim.attachProp(ped, config.model, config.bone, config.offset, config.rotation, config.options)
+            local prop, propErr = attachProp(ped, config)
             if not prop then
                 cancelEmote(true)
                 return false, propErr or 'The emote prop could not be created.'

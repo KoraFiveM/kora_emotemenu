@@ -27,12 +27,15 @@ QBEEmotes = {
     clipboard = {
         label = 'Clipboard', category = 'props', type = 'anim',
         dict = 'missheistdockssetup1clipboard@base', clip = 'base', flag = 49,
-        prop = { model = 'p_amb_clipboard_01', bone = 'IK_R_Hand', offset = { x = 0.16, y = 0.08, z = 0.10 }, rotation = { x = -130.0, y = -50.0, z = 0.0 } },
+        -- Placeholder bones (PH_*) follow the animated hand; IK_R_Hand is an IK helper
+        -- that does not, which left props floating. Values come from community packs
+        -- and are unverified in-game; tune live with Config.propOverrides.
+        prop = { model = 'p_amb_clipboard_01', bone = 'PH_L_Hand', offset = { x = 0.16, y = 0.08, z = 0.10 }, rotation = { x = -130.0, y = -50.0, z = 0.0 } },
     },
     coffee = {
         label = 'Coffee', category = 'props', type = 'anim',
         dict = 'amb@world_human_drinking@coffee@male@idle_a', clip = 'idle_c', flag = 49,
-        prop = { model = 'p_amb_coffeecup_01', bone = 'IK_R_Hand', offset = { x = 0.10, y = -0.02, z = 0.03 }, rotation = { x = -100.0, y = 0.0, z = 0.0 } },
+        prop = { model = 'p_amb_coffeecup_01', bone = 'PH_R_Hand', offset = { x = 0.0, y = 0.0, z = 0.0 }, rotation = { x = 0.0, y = 0.0, z = 130.0 } },
     },
     guitar = {
         label = 'Air guitar', category = 'dance', type = 'anim',
