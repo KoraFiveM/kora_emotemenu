@@ -8,7 +8,7 @@ name 'kora_emotemenu'
 provide 'qbemotemenu'
 author 'qbcore2'
 version '1.0.0'
-description 'A qblib-native, configurable FiveM emote menu.'
+description 'A kora_lib-native, configurable FiveM emote menu.'
 
 dependencies {
     'kora_lib'

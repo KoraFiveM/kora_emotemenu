@@ -1,6 +1,6 @@
 # kora_emotemenu
 
-`kora_emotemenu` is a from-scratch, qblib-native emote resource. It uses kora_lib's
+`kora_emotemenu` is a from-scratch, kora_lib-native emote resource. It uses kora_lib's
 radial NUI, keybinds, animation/prop ownership, streaming, notifications,
 controls and state bags rather than shipping a separate menu framework.
 
