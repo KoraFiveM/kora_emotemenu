@@ -1,6 +1,8 @@
 -- This starter catalogue intentionally contains only Rockstar assets. Addon
 -- animation dictionaries and props can be registered at runtime with the
 -- registerEmote export; no third-party emote data is bundled here.
+-- Dances use flag 1 (looping, full body). Flag 49 is upper-body only, so the legs
+-- never danced.
 QBEEmotes = {
     wave = {
         label = 'Wave', category = 'general', type = 'anim',
@@ -34,15 +36,15 @@ QBEEmotes = {
     },
     guitar = {
         label = 'Air guitar', category = 'dance', type = 'anim',
-        dict = 'anim@mp_player_intcelebrationmale@air_guitar', clip = 'air_guitar', flag = 49,
+        dict = 'anim@mp_player_intcelebrationmale@air_guitar', clip = 'air_guitar', flag = 1,
     },
     dance = {
         label = 'Dance', category = 'dance', type = 'anim',
-        dict = 'mini@strip_club@idles@dj@idle_01', clip = 'idle_01', flag = 49,
+        dict = 'mini@strip_club@idles@dj@idle_01', clip = 'idle_01', flag = 1,
     },
     dance2 = {
         label = 'Dance 2', category = 'dance', type = 'anim',
-        dict = 'anim@amb@nightclub@mini@dance@dance_solo@male@var_b@', clip = 'high_center', flag = 49,
+        dict = 'anim@amb@nightclub@mini@dance@dance_solo@male@var_b@', clip = 'high_center', flag = 1,
     },
     handshake = {
         label = 'Handshake', category = 'shared', type = 'anim',

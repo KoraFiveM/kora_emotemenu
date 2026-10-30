@@ -7,6 +7,10 @@ Config.keybind = {
     defaultKey = 'F3',
 }
 
+-- 'radial' (default), 'context' (list menu) or 'app' (app shell window).
+-- Read every time the menu opens, so changing it needs no restart.
+Config.menuStyle = 'radial'
+
 Config.syncDistance = 3.0
 Config.syncInviteTTL = 10000
 Config.syncCooldown = 3000
@@ -45,4 +49,15 @@ Config.expressions = {
 }
 
 -- Registers this resource-owned configuration with kora_lib without changing its public Config table.
-if QB and QB.config and QB.config.adopt then Config = QB.config.adopt(Config) end
+if QB and QB.config and QB.config.adopt then
+    Config.menuStyle = QB.config.enum(Config.menuStyle, {
+        label = 'Menu style',
+        description = 'Chooses how the emote menu is shown. Radial is the circular wheel, Context is a plain list that opens each category as its own page, and App Shell is a windowed menu with a tab per category. The change applies the next time the menu is opened.',
+        options = {
+            { value = 'radial', label = 'Radial' },
+            { value = 'context', label = 'Context list' },
+            { value = 'app', label = 'App Shell' },
+        },
+    })
+    Config = QB.config.adopt(Config)
+end

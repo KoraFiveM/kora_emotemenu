@@ -4,6 +4,8 @@ local menuOpen = false
 local lastEmote = nil
 local activeWalkClip = nil
 local cancelMonitorRunning = false
+local MENU_APP_ID = 'qbemotemenu:menu'
+local appSelection
 
 local function notify(message, kind)
     QB.notify.send({ title = 'Emotes', message = message, type = kind or 'info' })
@@ -186,15 +188,86 @@ local function menuItems()
     table.sort(items, function(a, b) return a.label < b.label end)
     items[#items + 1] = { id = 'walk', label = 'Walk style', icon = 'Footprints', submenu = { title = 'Walk style', items = optionItems(Config.walks, 'walk:') } }
     items[#items + 1] = { id = 'expression', label = 'Expression', icon = 'ScanFace', submenu = { title = 'Expression', items = optionItems(Config.expressions, 'expression:') } }
-    items[#items + 1] = { id = 'cancel', label = 'Cancel emote', icon = 'CircleX', disabled = active.name == nil }
+    items[#items + 1] = { id = 'cancel', label = 'Cancel emote', icon = 'CircleX', disabled = active.name == nil, description = active.name and 'Stop the current emote' or 'No emote is playing' }
     return items
+end
+
+-- A context menu is one level, so each submenu is shown as its own page with a Back row.
+local function openContextPages(items)
+    local page, trail = items, {}
+    while true do
+        local rows = {}
+        if #trail > 0 then rows[1] = { id = 'menu:back', label = 'Back', icon = 'ChevronLeft' } end
+        for _, item in ipairs(page) do rows[#rows + 1] = item end
+        local result = QB.nui.openContextMenu(rows)
+        if not result or result.cancelled then return result end
+        if result.selectedId == 'menu:back' then
+            page = table.remove(trail)
+        else
+            local chosen
+            for _, item in ipairs(page) do
+                if item.id == result.selectedId then chosen = item break end
+            end
+            if not (chosen and chosen.submenu) then return result end
+            trail[#trail + 1] = page
+            page = chosen.submenu.items
+        end
+    end
+end
+
+local function appNavigation(items)
+    local navigation = {}
+    for _, item in ipairs(items) do
+        local rows = {}
+        if item.submenu then
+            for _, entry in ipairs(item.submenu.items) do
+                rows[#rows + 1] = { id = entry.id, label = entry.label, icon = entry.icon, action = { id = entry.id, label = 'Select' } }
+            end
+        else
+            rows[1] = { id = item.id, label = item.label, description = item.description, icon = item.icon, action = { id = item.id, label = 'Select', disabled = item.disabled } }
+        end
+        local title = item.submenu and item.submenu.title or item.label
+        navigation[#navigation + 1] = {
+            id = item.id, label = item.label, icon = item.icon,
+            content = { title = title, blocks = { { type = 'list', id = item.id .. ':list', searchable = item.submenu ~= nil, items = rows } } },
+        }
+    end
+    return navigation
+end
+
+local function openAppPages(items)
+    appSelection = nil
+    QB.nui.updateApp(MENU_APP_ID, { navigation = appNavigation(items) })
+    QB.nui.openApp(MENU_APP_ID)
+    if not appSelection then return { cancelled = true } end
+    return { selectedId = appSelection }
+end
+
+QB.nui.registerApp({
+    id = MENU_APP_ID,
+    title = 'Emotes',
+    icon = 'Smile',
+    layout = 'compact',
+    navigation = { { id = 'empty', label = 'Emotes', content = { blocks = { { type = 'empty', description = 'Open the emote menu to choose an emote.' } } } } },
+    onAction = function(actionId)
+        appSelection = actionId
+        return { close = true }
+    end,
+})
+
+-- Same items for every style; Config.menuStyle is read here so it can change live.
+local function openStyledMenu(items)
+    local style = Config.menuStyle
+    if style == 'context' then return openContextPages(items) end
+    if style == 'app' then return openAppPages(items) end
+    return QB.nui.openRadialMenu(items, { radius = 165 })
 end
 
 local function openMenu()
     if menuOpen then return end
     if not canUse() then return notify('You cannot use emotes right now.', 'error') end
     menuOpen = true
-    local result = QB.nui.openRadialMenu(menuItems(), { radius = 165 })
+    local result = openStyledMenu(menuItems())
     menuOpen = false
     if not result or result.cancelled then return end
     local id = result.selectedId
@@ -280,7 +353,7 @@ exports('registerEmote', function(name, definition)
     assert(definition.hidden == true or Config.categories[definition.category], 'Visible emotes require a configured category.')
     if definition.type == 'anim' then assert(type(definition.dict) == 'string' and type(definition.clip) == 'string', 'Animation emotes require dict and clip.') end
     if definition.type == 'scenario' then assert(type(definition.scenario) == 'string', 'Scenario emotes require scenario.') end
-    emotes[name:lower()] = copy(definition)
+    emotes[name:lower()] = QB.util.deepClone(definition)
 end)
 exports('setWalk', setWalk)
 exports('resetWalk', function() return setWalk('default') end)
