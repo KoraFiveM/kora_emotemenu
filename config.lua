@@ -12,8 +12,8 @@ Config.keybind = {
 Config.menuStyle = 'radial'
 
 -- Per-emote prop tweaks, merged over shared/emotes.lua each time the emote plays.
--- Example: Config.propOverrides.clipboard = { prop = { bone = 'PH_R_Hand', offset = { x = 0.0, y = 0.0, z = 0.0 } } }
--- Use the key `proptwo` for a second prop. Only the fields you set are replaced.
+-- Example: Config.propOverrides.clipboard = { prop = { bone = 57005, offset = { x = 0.0, y = 0.0, z = 0.0 } } }
+-- Bones are ped bone ids (see QBEBoneNames in shared/emotes.lua for names). Use the key `proptwo` for a second prop. Only the fields you set are replaced.
 Config.propOverrides = {}
 
 Config.syncDistance = 3.0
@@ -45,12 +45,23 @@ Config.walks = {
     sad = { label = 'Sad', clipset = 'move_m@depressed@a' },
 }
 
+-- anim is a facial mood clip from facials@gen_male@base / facials@gen_female@base, applied with
+-- SetFacialIdleAnimOverride. An entry without anim clears the override. Optional `notice` replaces the
+-- word used by expressionNotify ("<name> appears to be <notice>"); it defaults to the lowercase label.
 Config.expressions = {
     default = { label = 'Default' },
-    angry = { label = 'Angry', anim = 'mood_angry_1', dict = 'facials@gen_male@base' },
-    happy = { label = 'Happy', anim = 'mood_happy_1', dict = 'facials@gen_male@base' },
-    smug = { label = 'Smug', anim = 'mood_smug_1', dict = 'facials@gen_male@base' },
-    stressed = { label = 'Stressed', anim = 'mood_stressed_1', dict = 'facials@gen_male@base' },
+    angry = { label = 'Angry', anim = 'mood_angry_1' },
+    happy = { label = 'Happy', anim = 'mood_happy_1' },
+    smug = { label = 'Smug', anim = 'mood_smug_1' },
+    stressed = { label = 'Stressed', anim = 'mood_stressed_1' },
+}
+
+-- Optional RP nicety: tells you when someone nearby is wearing an expression. Off by default.
+-- Read every time the check runs, so changing it needs no restart.
+Config.expressionNotify = {
+    enabled = false,
+    distance = 3.0,
+    cooldown = 120, -- seconds before the same player+expression is announced again
 }
 
 -- Registers this resource-owned configuration with kora_lib without changing its public Config table.
@@ -63,6 +74,24 @@ if QB and QB.config and QB.config.adopt then
             { value = 'context', label = 'Context list' },
             { value = 'app', label = 'App Shell' },
         },
+    })
+    Config.expressionNotify.enabled = QB.config.boolean(Config.expressionNotify.enabled, {
+        label = 'Expression notifications',
+        description = 'When enabled, players who come close to someone with an active facial expression such as angry or happy get a notification like "Alex appears to be angry". Disabled by default because it adds a small periodic check on every client.',
+        live = true,
+    })
+    Config.expressionNotify.distance = QB.config.number(Config.expressionNotify.distance, {
+        label = 'Expression notification distance',
+        description = 'Sets how close, in metres, you must be to a player with an active expression before the notification is shown. Only used when expression notifications are enabled.',
+        min = 0.5,
+        max = 20,
+        live = true,
+    })
+    Config.expressionNotify.cooldown = QB.config.number(Config.expressionNotify.cooldown, {
+        label = 'Expression notification cooldown',
+        description = 'Sets how many seconds must pass before the same player and expression are announced to you again. Only used when expression notifications are enabled.',
+        min = 5,
+        live = true,
     })
     Config = QB.config.adopt(Config)
 end

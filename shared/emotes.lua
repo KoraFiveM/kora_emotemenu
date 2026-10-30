@@ -1,3 +1,15 @@
+-- Ped bone ids accepted for prop emotes (GetPedBoneIndex). Names are accepted too
+-- and resolve through QBEBoneNames, because MP peds do not expose PH_* skeleton names
+-- to GetEntityBoneIndexByName.
+QBEBoneNames = {
+    SKEL_L_Hand = 18905,
+    SKEL_R_Hand = 57005,
+    PH_L_Hand = 60309,
+    PH_R_Hand = 28422,
+    IK_L_Hand = 36029,
+    IK_R_Hand = 6286,
+}
+
 -- This starter catalogue intentionally contains only Rockstar assets. Addon
 -- animation dictionaries and props can be registered at runtime with the
 -- registerEmote export; no third-party emote data is bundled here.
@@ -27,15 +39,15 @@ QBEEmotes = {
     clipboard = {
         label = 'Clipboard', category = 'props', type = 'anim',
         dict = 'missheistdockssetup1clipboard@base', clip = 'base', flag = 49,
-        -- Placeholder bones (PH_*) follow the animated hand; IK_R_Hand is an IK helper
-        -- that does not, which left props floating. Values come from community packs
-        -- and are unverified in-game; tune live with Config.propOverrides.
-        prop = { model = 'p_amb_clipboard_01', bone = 'PH_L_Hand', offset = { x = 0.16, y = 0.08, z = 0.10 }, rotation = { x = -130.0, y = -50.0, z = 0.0 } },
+        -- Bones are ped bone ids for GetPedBoneIndex (18905 left hand, 28422 right hand IK).
+        -- PH_* names are not valid GetEntityBoneIndexByName lookups on MP peds. Values come from
+        -- community packs and are unverified in-game; tune live with Config.propOverrides.
+        prop = { model = 'p_amb_clipboard_01', bone = 18905, offset = { x = 0.16, y = 0.08, z = 0.10 }, rotation = { x = -130.0, y = -50.0, z = 0.0 } },
     },
     coffee = {
         label = 'Coffee', category = 'props', type = 'anim',
         dict = 'amb@world_human_drinking@coffee@male@idle_a', clip = 'idle_c', flag = 49,
-        prop = { model = 'p_amb_coffeecup_01', bone = 'PH_R_Hand', offset = { x = 0.0, y = 0.0, z = 0.0 }, rotation = { x = 0.0, y = 0.0, z = 130.0 } },
+        prop = { model = 'p_amb_coffeecup_01', bone = 28422, offset = { x = 0.0, y = 0.0, z = 0.0 }, rotation = { x = 0.0, y = 0.0, z = 130.0 } },
     },
     guitar = {
         label = 'Air guitar', category = 'dance', type = 'anim',

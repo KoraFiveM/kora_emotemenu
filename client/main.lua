@@ -42,10 +42,12 @@ local function getPropConfig(name, slot)
     return merged
 end
 
--- QB.anim.attachProp only accepts bone names, but emotes saved by the emote maker
--- store numeric bone ids (GetPedBoneIndex), so both forms are resolved here.
+-- Props use ped bone ids (GetPedBoneIndex), which is also what the emote maker saves.
+-- Known bone names are mapped to ids because MP peds do not expose PH_* names to
+-- GetEntityBoneIndexByName.
 local function attachProp(ped, config)
     local bone = config.bone
+    if type(bone) == 'string' and QBEBoneNames[bone] then bone = QBEBoneNames[bone] end
     local boneIndex = type(bone) == 'number' and GetPedBoneIndex(ped, bone) or GetEntityBoneIndexByName(ped, bone)
     if boneIndex == -1 then return false, ('Bone %s does not exist on the ped.'):format(tostring(bone)) end
 
@@ -184,16 +186,102 @@ local function setWalk(name, quiet)
     return true
 end
 
+local EXPRESSION_DICTS = { male = 'facials@gen_male@base', female = 'facials@gen_female@base' }
+local EXPRESSION_STATE = 'qbemotemenu:expression'
+local activeExpression = nil -- nil means no override
+local remoteExpressions = {} -- [serverId] = { ped = handle, name = expression }
+local noticeTimes = {} -- ['serverId:name'] = game timer of the last notice
+local expressionLoopRunning = false
+
+local function expressionAnim(name)
+    local expression = name and Config.expressions[name]
+    return expression and expression.anim
+end
+
+-- Facial moods are clips in the facials@gen_* dictionaries, which must be loaded for the
+-- override to show. The override itself takes the clip name and no dictionary.
+local function applyExpression(ped, name)
+    local anim = expressionAnim(name)
+    if not anim then
+        ClearFacialIdleAnimOverride(ped)
+        return
+    end
+    local dict = IsPedMale(ped) and EXPRESSION_DICTS.male or EXPRESSION_DICTS.female
+    if not HasAnimDictLoaded(dict) then
+        RequestAnimDict(dict)
+        local timeout = GetGameTimer() + 2000
+        while not HasAnimDictLoaded(dict) and GetGameTimer() < timeout do Wait(0) end
+    end
+    SetFacialIdleAnimOverride(ped, anim, 0)
+end
+
+local function expressionNoticeName(serverId)
+    local name
+    if QB.player and QB.player.getCharacterName then
+        local ok, value = pcall(QB.player.getCharacterName, serverId)
+        if ok then name = value end
+    end
+    if not name or name == '' then name = Player(serverId).state.characterName end
+    if type(name) ~= 'string' or name == '' then return 'Someone' end
+    return name
+end
+
+local function noticeRemoteExpression(serverId, ped, name)
+    local settings = Config.expressionNotify
+    local expression = Config.expressions[name]
+    if not settings or not settings.enabled or not expression or not expression.anim then return end
+    if #(GetEntityCoords(ped) - GetEntityCoords(PlayerPedId())) > settings.distance then return end
+    local key = ('%d:%s'):format(serverId, name)
+    local now = GetGameTimer()
+    if noticeTimes[key] and now - noticeTimes[key] < settings.cooldown * 1000 then return end
+    noticeTimes[key] = now
+    local word = expression.notice or (expression.label or name):lower()
+    notify(('%s appears to be %s'):format(expressionNoticeName(serverId), word))
+end
+
+-- Re-applies the local expression (other emotes, death and respawn reset facial overrides) and
+-- mirrors other players' state bag expression onto their peds once they are in scope.
+local function startExpressionLoop()
+    if expressionLoopRunning then return end
+    expressionLoopRunning = true
+    CreateThread(function()
+        while true do
+            Wait(1000)
+            if activeExpression then applyExpression(PlayerPedId(), activeExpression) end
+            local seen = {}
+            for _, player in ipairs(GetActivePlayers()) do
+                if player ~= PlayerId() then
+                    local ped = GetPlayerPed(player)
+                    local serverId = GetPlayerServerId(player)
+                    local name = DoesEntityExist(ped) and Player(serverId).state[EXPRESSION_STATE] or nil
+                    if name and not expressionAnim(name) then name = nil end
+                    local applied = remoteExpressions[serverId]
+                    seen[serverId] = true
+                    if name then
+                        if not applied or applied.ped ~= ped or applied.name ~= name then
+                            applyExpression(ped, name)
+                            remoteExpressions[serverId] = { ped = ped, name = name }
+                        end
+                        noticeRemoteExpression(serverId, ped, name)
+                    elseif applied then
+                        if DoesEntityExist(applied.ped) then ClearFacialIdleAnimOverride(applied.ped) end
+                        remoteExpressions[serverId] = nil
+                    end
+                end
+            end
+            for serverId in pairs(remoteExpressions) do
+                if not seen[serverId] then remoteExpressions[serverId] = nil end
+            end
+        end
+    end)
+end
+
 local function setExpression(name, quiet)
     local expression = Config.expressions[name]
     if not expression then return false, 'That expression is not configured.' end
-    local ped = PlayerPedId()
-    if expression.anim then
-        SetFacialIdleAnimOverride(ped, expression.anim, expression.dict)
-    else
-        ClearFacialIdleAnimOverride(ped)
-    end
-    setState('expression', name)
+    activeExpression = expression.anim and name or nil
+    applyExpression(PlayerPedId(), activeExpression)
+    setState('expression', activeExpression)
     if Config.persistAppearance then SetResourceKvp('expression', name) end
     if not quiet then notify(('Expression: %s'):format(expression.label)) end
     return true
@@ -433,6 +521,8 @@ exports('resetWalk', function() return setWalk('default') end)
 exports('setExpression', setExpression)
 exports('resetExpression', function() return setExpression('default') end)
 
+startExpressionLoop()
+
 CreateThread(function()
     Wait(1000)
     if Config.persistAppearance then
@@ -446,5 +536,13 @@ AddEventHandler('onClientResourceStop', function(resource)
     if resource == GetCurrentResourceName() then
         cancelEmote(true)
         if activeWalkClip then RemoveClipSet(activeWalkClip) end
+        if activeExpression then
+            activeExpression = nil
+            ClearFacialIdleAnimOverride(PlayerPedId())
+            setState('expression', nil)
+        end
+        for _, applied in pairs(remoteExpressions) do
+            if DoesEntityExist(applied.ped) then ClearFacialIdleAnimOverride(applied.ped) end
+        end
     end
 end)
