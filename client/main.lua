@@ -8,10 +8,10 @@ local MENU_APP_ID = 'qbemotemenu:menu'
 local appSelection
 
 local function notify(message, kind)
-    QB.notify.send({ title = 'Emotes', message = message, type = kind or 'info' })
+    Kora.notify.send({ title = 'Emotes', message = message, type = kind or 'info' })
 end
 
-for name, emote in pairs(QBEEmotes) do emotes[name] = QB.util.deepClone(emote) end
+for name, emote in pairs(QBEEmotes) do emotes[name] = Kora.util.deepClone(emote) end
 
 local function setState(key, value)
     LocalPlayer.state:set(('qbemotemenu:%s'):format(key), value, true)
@@ -53,7 +53,7 @@ local function attachProp(ped, config)
 
     local offset, rotation, options = config.offset or {}, config.rotation or {}, config.options or {}
     local prop
-    local loaded, err = QB.stream.loadModel(config.model, function(hash)
+    local loaded, err = Kora.stream.loadModel(config.model, function(hash)
         local created = CreateObjectNoOffset(hash, 0.0, 0.0, 0.0, false, false, false)
         if created == 0 or not DoesEntityExist(created) then return end
         AttachEntityToEntity(created, ped, boneIndex,
@@ -71,11 +71,11 @@ end
 local function cancelEmote(silent, skipSyncNotice)
     local wasActive = active.name ~= nil
     local previous = active
-    if previous.controls then QB.controls.release(previous.controls) end
+    if previous.controls then Kora.controls.release(previous.controls) end
     clearProps(previous.props)
     active = { name = nil, props = {}, controls = nil, syncPartner = nil }
     local ped = PlayerPedId()
-    if DoesEntityExist(ped) then QB.anim.clear(ped, true) end
+    if DoesEntityExist(ped) then Kora.anim.clear(ped, true) end
     setState('active', false)
     if previous.syncPartner and not skipSyncNotice then
         TriggerServerEvent('qbemotemenu:server:cancelSync')
@@ -107,11 +107,11 @@ local function playLocal(name)
     local ped = PlayerPedId()
     local played, err
     if emote.type == 'scenario' then
-        QB.anim.playScenario(ped, emote.scenario, emote.enterVehicle)
+        Kora.anim.playScenario(ped, emote.scenario, emote.enterVehicle)
         played = true
     elseif emote.type == 'anim' then
         local handle
-        handle, err = QB.anim.play(ped, emote.dict, emote.clip, { flag = emote.flag or 49, duration = emote.duration })
+        handle, err = Kora.anim.play(ped, emote.dict, emote.clip, { flag = emote.flag or 49, duration = emote.duration })
         played = handle ~= false
     else
         return false, 'The emote has an unknown type.'
@@ -119,7 +119,7 @@ local function playLocal(name)
     if not played then return false, err or 'The animation could not be loaded.' end
 
     active.name = name
-    if emote.blockMovement then active.controls = QB.controls.acquire(Config.blockedControls, { disablePlayerFiring = true }) end
+    if emote.blockMovement then active.controls = Kora.controls.acquire(Config.blockedControls, { disablePlayerFiring = true }) end
     for _, slot in ipairs({ 'prop', 'proptwo' }) do
         local config = getPropConfig(name, slot)
         if config then
@@ -170,7 +170,7 @@ local function setWalk(name, quiet)
     if not walk then return false, 'That walk style is not configured.' end
     local ped = PlayerPedId()
     if walk.clipset then
-        local loaded, err = QB.stream.loadClipSet(walk.clipset)
+        local loaded, err = Kora.stream.loadClipSet(walk.clipset)
         if not loaded then return false, err or 'The walk style could not be loaded.' end
         if activeWalkClip and activeWalkClip ~= walk.clipset then RemoveClipSet(activeWalkClip) end
         SetPedMovementClipset(ped, walk.clipset, 0.25)
@@ -217,8 +217,8 @@ end
 
 local function expressionNoticeName(serverId)
     local name
-    if QB.player and QB.player.getCharacterName then
-        local ok, value = pcall(QB.player.getCharacterName, serverId)
+    if Kora.player and Kora.player.getCharacterName then
+        local ok, value = pcall(Kora.player.getCharacterName, serverId)
         if ok then name = value end
     end
     if not name or name == '' then name = Player(serverId).state.characterName end
@@ -329,7 +329,7 @@ local function openContextPages(items)
         local rows = {}
         if #trail > 0 then rows[1] = { id = 'menu:back', label = 'Back', icon = 'ChevronLeft' } end
         for _, item in ipairs(page) do rows[#rows + 1] = item end
-        local result = QB.nui.openContextMenu(rows)
+        local result = Kora.nui.openContextMenu(rows)
         if not result or result.cancelled then return result end
         if result.selectedId == 'menu:back' then
             page = table.remove(trail)
@@ -374,7 +374,7 @@ local appWarned = false
 -- Registration is validated by kora_lib and can throw, so it never runs unprotected.
 local function registerMenuApp()
     if appRegistered then return true end
-    local ok, err = pcall(QB.nui.registerApp, {
+    local ok, err = pcall(Kora.nui.registerApp, {
         id = MENU_APP_ID,
         title = 'Emotes',
         icon = 'Smile',
@@ -397,7 +397,7 @@ end
 local function openAppPages(items)
     if not registerMenuApp() then return nil end
     appSelection = nil
-    local ok, err = pcall(QB.nui.updateApp, MENU_APP_ID, { navigation = appNavigation(items) })
+    local ok, err = pcall(Kora.nui.updateApp, MENU_APP_ID, { navigation = appNavigation(items) })
     if not ok then
         appRegistered = false
         if not appWarned then
@@ -406,7 +406,7 @@ local function openAppPages(items)
         end
         return nil
     end
-    QB.nui.openApp(MENU_APP_ID)
+    Kora.nui.openApp(MENU_APP_ID)
     if not appSelection then return { cancelled = true } end
     return { selectedId = appSelection }
 end
@@ -421,7 +421,7 @@ local function openStyledMenu(items)
         local result = openAppPages(items)
         if result then return result end
     end
-    return QB.nui.openRadialMenu(items, { radius = 165 })
+    return Kora.nui.openRadialMenu(items, { radius = 165 })
 end
 
 local function openMenu()
@@ -446,7 +446,7 @@ local function openMenu()
     end
 end
 
-QB.keybind.add({ name = Config.keybind.name, description = Config.keybind.label, defaultKey = Config.keybind.defaultKey, onPressed = openMenu })
+Kora.keybind.add({ name = Config.keybind.name, description = Config.keybind.label, defaultKey = Config.keybind.defaultKey, onPressed = openMenu })
 
 RegisterCommand(Config.command, openMenu, false)
 RegisterCommand('e', function(_, args)
@@ -471,7 +471,7 @@ RegisterNetEvent('qbemotemenu:client:syncInvite', function(inviteId, playerName,
             TriggerServerEvent('qbemotemenu:server:respondSync', inviteId, false)
             return
         end
-        local result = QB.nui.openAlert({
+        local result = Kora.nui.openAlert({
             title = 'Shared emote request',
             message = ('%s wants to perform %s with you.'):format(playerName, emoteLabel),
             confirmLabel = 'Accept',
@@ -498,7 +498,7 @@ end)
 -- Emotes saved through the emote maker (server/emote_creator.lua).
 RegisterNetEvent('qbemotemenu:client:addEmotes', function(created)
     if source ~= 65535 or type(created) ~= 'table' then return end
-    for name, emote in pairs(created) do emotes[name] = QB.util.deepClone(emote) end
+    for name, emote in pairs(created) do emotes[name] = Kora.util.deepClone(emote) end
 end)
 TriggerServerEvent('qbemotemenu:server:requestCreated')
 
@@ -514,7 +514,7 @@ exports('registerEmote', function(name, definition)
     assert(definition.hidden == true or Config.categories[definition.category], 'Visible emotes require a configured category.')
     if definition.type == 'anim' then assert(type(definition.dict) == 'string' and type(definition.clip) == 'string', 'Animation emotes require dict and clip.') end
     if definition.type == 'scenario' then assert(type(definition.scenario) == 'string', 'Scenario emotes require scenario.') end
-    emotes[name:lower()] = QB.util.deepClone(definition)
+    emotes[name:lower()] = Kora.util.deepClone(definition)
 end)
 exports('setWalk', setWalk)
 exports('resetWalk', function() return setWalk('default') end)

@@ -1,7 +1,7 @@
 local pendingBySource = {}
 local pendingByTarget = {}
 local activePartner = {}
-local requestCooldown = QB.timers.cooldown(Config.syncCooldown)
+local requestCooldown = Kora.timers.cooldown(Config.syncCooldown)
 local nextInviteId = 0
 
 ---TODO: make this a kora command
@@ -12,10 +12,10 @@ end, false)
 
 local function validSync(source, target, emoteName)
     target = tonumber(target)
-    if not QB.util.isInteger(target) or target <= 0 or target == source then return false, 'Choose another nearby player.' end
+    if not Kora.util.isInteger(target) or target <= 0 or target == source then return false, 'Choose another nearby player.' end
     local emote = QBEEmotes[emoteName]
     if not emote or not emote.sync or not QBEEmotes[emote.sync.partner] then return false, 'That shared emote is unavailable.' end
-    local _, reason = QB.world.resolveNearbyPlayer(source, target, { maxDistance = Config.syncDistance })
+    local _, reason = Kora.world.resolveNearbyPlayer(source, target, { maxDistance = Config.syncDistance })
     if reason == 'routing_bucket_mismatch' then return false, 'That player is in another instance.' end
     if reason == 'too_far' then return false, 'That player is too far away.' end
     if type(reason) ~= 'number' then return false, 'That player is no longer available.' end
@@ -29,13 +29,13 @@ RegisterNetEvent('qbemotemenu:server:sync', function(target, emoteName)
     local current = GetGameTimer()
     local ok, emoteOrReason = validSync(source, target, emoteName:lower())
     if not ok then
-        return QB.notify.send(source, { title = 'Emotes', message = emoteOrReason, type = 'error' })
+        return Kora.notify.send(source, { title = 'Emotes', message = emoteOrReason, type = 'error' })
     end
     target = tonumber(target)
     if pendingBySource[source] or pendingByTarget[source]
         or pendingBySource[target] or pendingByTarget[target]
         or activePartner[source] or activePartner[target] then
-        return QB.notify.send(source, { title = 'Emotes', message = 'One of you is already handling a shared emote.', type = 'error' })
+        return Kora.notify.send(source, { title = 'Emotes', message = 'One of you is already handling a shared emote.', type = 'error' })
     end
 
     nextInviteId = nextInviteId + 1
@@ -55,7 +55,7 @@ RegisterNetEvent('qbemotemenu:server:sync', function(target, emoteName)
         if pendingBySource[source] ~= invite then return end
         pendingBySource[source] = nil
         pendingByTarget[target] = nil
-        QB.notify.send(source, { title = 'Emotes', message = 'The shared emote request expired.', type = 'error' })
+        Kora.notify.send(source, { title = 'Emotes', message = 'The shared emote request expired.', type = 'error' })
     end)
 end)
 
@@ -67,12 +67,12 @@ RegisterNetEvent('qbemotemenu:server:respondSync', function(inviteId, accepted)
     pendingBySource[invite.source] = nil
 
     if accepted ~= true or invite.expiresAt < GetGameTimer() then
-        return QB.notify.send(invite.source, { title = 'Emotes', message = 'The shared emote request was declined.', type = 'error' })
+        return Kora.notify.send(invite.source, { title = 'Emotes', message = 'The shared emote request was declined.', type = 'error' })
     end
 
     local ok, emoteOrReason = validSync(invite.source, target, invite.emote)
     if not ok or emoteOrReason.sync.partner ~= invite.partnerEmote then
-        return QB.notify.send(invite.source, { title = 'Emotes', message = ok and 'The shared emote changed.' or emoteOrReason, type = 'error' })
+        return Kora.notify.send(invite.source, { title = 'Emotes', message = ok and 'The shared emote changed.' or emoteOrReason, type = 'error' })
     end
 
     activePartner[invite.source] = target

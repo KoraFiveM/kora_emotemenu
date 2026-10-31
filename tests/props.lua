@@ -22,7 +22,7 @@ local function host()
         for k, v in pairs(value) do out[k] = deepClone(v) end
         return out
     end
-    env.QB = {
+    env.Kora = {
         util = { deepClone = deepClone },
         notify = { send = function() end },
         keybind = { add = function() end },

@@ -24,7 +24,7 @@ exports.kora_emotemenu:registerEmote('my_emote', {
 ```
 
 Supported types are `anim` and `scenario`. Animation entries may include
-`blockMovement`, `duration`, and a `prop` accepted by `QB.anim.attachProp`.
+`blockMovement`, `duration`, and a `prop` accepted by `Kora.anim.attachProp`.
 The `sync` field uses a second, hidden catalogue entry as the partner emote.
 Sync distance is checked on the server before either player is instructed to
 play.

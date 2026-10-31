@@ -17,7 +17,7 @@ local function host(configure)
         for k, v in pairs(value) do out[k] = deepClone(v) end
         return out
     end
-    env.QB = {
+    env.Kora = {
         util = { deepClone = deepClone },
         notify = { send = function(payload) h.notices[#h.notices + 1] = payload end },
         keybind = { add = function() end },

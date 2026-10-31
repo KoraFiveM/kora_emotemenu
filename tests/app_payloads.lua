@@ -72,7 +72,7 @@ local function host(configure)
     local h = { prints = {}, registered = nil, updates = {}, opened = 0, menus = {} }
     env.print = function(...) h.prints[#h.prints + 1] = table.concat({ ... }, ' ') end
     local function clone(v) if type(v) ~= 'table' then return v end local o = {} for k, x in pairs(v) do o[k] = clone(x) end return o end
-    env.QB = {
+    env.Kora = {
         util = { deepClone = clone },
         notify = { send = function() end }, keybind = { add = function() end },
         controls = { acquire = function() end, release = function() end },
@@ -136,7 +136,7 @@ end
 
 -- A failing registration must not break the menu: warn once and fall back.
 h = host(function(env, host)
-    env.QB.nui.registerApp = function() error("App view 'empty' block 1 requires a title.") end
+    env.Kora.nui.registerApp = function() error("App view 'empty' block 1 requires a title.") end
 end)
 for _, style in ipairs({ 'radial', 'context', 'app' }) do
     h.config.menuStyle = style

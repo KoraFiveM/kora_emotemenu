@@ -1,6 +1,6 @@
 local RESOURCE = GetCurrentResourceName()
 local CREATED_FILE = 'shared/created.json'
-local saveCooldown = QB.timers.cooldown(2000)
+local saveCooldown = Kora.timers.cooldown(2000)
 
 local MAX_PROPS = 2
 local PROP_SLOTS = { 'prop', 'proptwo' }
@@ -9,7 +9,7 @@ local ASSET_PATTERN = '^[%w_@%.%-%^]+$'
 local CREATOR_CATEGORIES = { general = true, dance = true, props = true }
 
 local function notify(source, message, kind)
-    QB.notify.send(source, { title = 'Emote Maker', message = message, type = kind or 'error' })
+    Kora.notify.send(source, { title = 'Emote Maker', message = message, type = kind or 'error' })
 end
 
 local function text(value, pattern, maxLength)

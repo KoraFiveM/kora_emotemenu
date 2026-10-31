@@ -12,7 +12,7 @@ local function host()
     local now = 1000
     local env = {}
     for name, value in pairs(_G) do env[name] = value end
-    env.QB = {
+    env.Kora = {
         util = { isInteger = function(n) return type(n) == 'number' and n % 1 == 0 end },
         world = { resolveNearbyPlayer = function() return 100, 0 end },
         timers = { cooldown = function() return { use = function() return true end, reset = function() end } end },

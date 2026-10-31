@@ -65,8 +65,8 @@ Config.expressionNotify = {
 }
 
 -- Registers this resource-owned configuration with kora_lib without changing its public Config table.
-if QB and QB.config and QB.config.adopt then
-    Config.menuStyle = QB.config.enum(Config.menuStyle, {
+if Kora and Kora.config and Kora.config.adopt then
+    Config.menuStyle = Kora.config.enum(Config.menuStyle, {
         label = 'Menu style',
         description = 'Chooses how the emote menu is shown. Radial is the circular wheel, Context is a plain list that opens each category as its own page, and App Shell is a windowed menu with a tab per category. The change applies the next time the menu is opened.',
         options = {
@@ -75,23 +75,23 @@ if QB and QB.config and QB.config.adopt then
             { value = 'app', label = 'App Shell' },
         },
     })
-    Config.expressionNotify.enabled = QB.config.boolean(Config.expressionNotify.enabled, {
+    Config.expressionNotify.enabled = Kora.config.boolean(Config.expressionNotify.enabled, {
         label = 'Expression notifications',
         description = 'When enabled, players who come close to someone with an active facial expression such as angry or happy get a notification like "Alex appears to be angry". Disabled by default because it adds a small periodic check on every client.',
         live = true,
     })
-    Config.expressionNotify.distance = QB.config.number(Config.expressionNotify.distance, {
+    Config.expressionNotify.distance = Kora.config.number(Config.expressionNotify.distance, {
         label = 'Expression notification distance',
         description = 'Sets how close, in metres, you must be to a player with an active expression before the notification is shown. Only used when expression notifications are enabled.',
         min = 0.5,
         max = 20,
         live = true,
     })
-    Config.expressionNotify.cooldown = QB.config.number(Config.expressionNotify.cooldown, {
+    Config.expressionNotify.cooldown = Kora.config.number(Config.expressionNotify.cooldown, {
         label = 'Expression notification cooldown',
         description = 'Sets how many seconds must pass before the same player and expression are announced to you again. Only used when expression notifications are enabled.',
         min = 5,
         live = true,
     })
-    Config = QB.config.adopt(Config)
+    Config = Kora.config.adopt(Config)
 end

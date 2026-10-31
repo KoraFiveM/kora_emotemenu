@@ -25,7 +25,7 @@ local freecam = { active = false, cam = nil, pos = vec3(0.0, 0.0, 0.0), yaw = 0.
 local buildNavigation
 
 local function notify(message, kind)
-    QB.notify.send({ title = 'Emote Maker', message = message, type = kind or 'info' })
+    Kora.notify.send({ title = 'Emote Maker', message = message, type = kind or 'info' })
 end
 
 local function num(value, fallback)
@@ -37,7 +37,7 @@ local function int(value, fallback)
 end
 
 local function refresh()
-    QB.nui.updateApp(APP_ID, { navigation = buildNavigation() })
+    Kora.nui.updateApp(APP_ID, { navigation = buildNavigation() })
 end
 
 ------------------------------------------------------------------------
@@ -54,7 +54,7 @@ end
 local function openMenu()
     CreateThread(function()
         refresh()
-        local result = QB.nui.openApp(APP_ID)
+        local result = Kora.nui.openApp(APP_ID)
         local reason = type(result) == 'table' and result.reason or nil
         if reason ~= 'action' and reason ~= 'superseded' then destroyCam() end
     end)
@@ -181,7 +181,7 @@ end
 local function stopPreview()
     clearProps()
     local ped = PlayerPedId()
-    if DoesEntityExist(ped) then QB.anim.clear(ped, true) end
+    if DoesEntityExist(ped) then Kora.anim.clear(ped, true) end
     preview.playing = false
 end
 
@@ -202,7 +202,7 @@ local function attachProp(index)
         return false
     end
 
-    QB.stream.loadModel(model)
+    Kora.stream.loadModel(model)
 
     local coords = GetEntityCoords(ped)
     local entity = CreateObject(model, coords.x, coords.y, coords.z, true, true, false)
@@ -228,7 +228,7 @@ local function playPreview()
 
     stopPreview()
 
-    local handle, err = QB.anim.play(PlayerPedId(), editor.dict, editor.clip, { flag = editor.flag })
+    local handle, err = Kora.anim.play(PlayerPedId(), editor.dict, editor.clip, { flag = editor.flag })
     if not handle then
         notify(err or 'The animation could not be played.', 'error')
         return false
@@ -494,7 +494,7 @@ local indexedHandlers = {
     end,
 }
 
-QB.nui.registerApp({
+Kora.nui.registerApp({
     id = APP_ID,
     title = 'Emote Maker',
     description = 'Create and preview emotes with up to two props.',
