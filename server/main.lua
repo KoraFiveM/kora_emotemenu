@@ -5,7 +5,7 @@ local requestCooldown = Kora.timers.cooldown(Config.syncCooldown)
 local nextInviteId = 0
 
 Kora.commands.add('emoteMaker', 'Open the emote creator', nil, false, function(source)
-    if not IsPlayerAceAllowed(source, 'commands') then
+    if not IsPlayerAceAllowed(source, 'command') then
         return Kora.notify.send(source, { title = 'Emotes', message = 'You do not have permission to use this command.', type = 'error' })
     end
     TriggerClientEvent('qbemotemenu:client:openEmoteCreator', source)
