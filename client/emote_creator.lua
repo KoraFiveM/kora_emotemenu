@@ -25,10 +25,6 @@ local function int(value, fallback)
     return math.floor(num(value, fallback))
 end
 
-------------------------------------------------------------------------
--- Freecam
-------------------------------------------------------------------------
-
 local function destroyCam()
     if not freecam.cam then return end
     RenderScriptCams(false, true, 300, true, true)
@@ -143,10 +139,6 @@ local function startFreecam()
     CreateThread(freecamLoop)
 end
 
-------------------------------------------------------------------------
--- Props and preview
-------------------------------------------------------------------------
-
 local function makeProp()
     return {
         modelName = '',
@@ -257,10 +249,6 @@ local function reattachAll()
     for index = 1, #editor.props do attachProp(index) end
 end
 
-------------------------------------------------------------------------
--- Saving
-------------------------------------------------------------------------
-
 local function buildPayload()
     local props = {}
     for _, prop in ipairs(editor.props) do
@@ -287,10 +275,6 @@ local REQUIRED_FIELDS = {
     { 'dict', 'an animation dictionary' },
     { 'clip', 'an animation clip' },
 }
-
-------------------------------------------------------------------------
--- React NUI bridge
-------------------------------------------------------------------------
 
 local function pushState(action)
     SendNUIMessage({ action = action or 'state', editor = editor, categories = CREATOR_CATEGORIES, playing = preview.playing })
