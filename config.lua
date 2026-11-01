@@ -27,6 +27,18 @@ Config.cancelControl = 73 -- X
 -- itself is cancelled if the player needs to defend themselves.
 Config.blockedControls = { 21, 22, 23, 24, 25, 30, 31, 32, 33, 34, 35 }
 
+-- Emotes while seated in a vehicle. The menu never removes the player from the seat: it does not
+-- use ClearPedTasksImmediately in a vehicle, and cancelling uses StopAnimTask / ClearPedSecondaryTask.
+--   allowEmotes       false refuses every emote while in a vehicle.
+--   upperBodyOnly     true plays animations as upper-body/secondary tasks (flag 48/49) and refuses walk styles.
+--   blockedInVehicle  list of emote names refused in a vehicle. Scenarios and emotes with `standing = true`
+--                     (shared/emotes.lua) are always refused in a vehicle.
+Config.vehicle = {
+    allowEmotes = true,
+    upperBodyOnly = true,
+    blockedInVehicle = {},
+}
+
 Config.categories = {
     general = { label = 'General', icon = 'MessageCircle' },
     dance = { label = 'Dances', icon = 'Music2' },
@@ -91,6 +103,16 @@ if Kora and Kora.config and Kora.config.adopt then
         label = 'Expression notification cooldown',
         description = 'Sets how many seconds must pass before the same player and expression are announced to you again. Only used when expression notifications are enabled.',
         min = 5,
+        live = true,
+    })
+    Config.vehicle.allowEmotes = Kora.config.boolean(Config.vehicle.allowEmotes, {
+        label = 'Emotes in vehicles',
+        description = 'When enabled, players seated in a vehicle can play animation emotes. Scenarios and emotes that need standing are always refused. Players are never removed from their seat. When disabled, every emote is refused while in a vehicle.',
+        live = true,
+    })
+    Config.vehicle.upperBodyOnly = Kora.config.boolean(Config.vehicle.upperBodyOnly, {
+        label = 'Upper-body emotes in vehicles',
+        description = 'When enabled, animations played inside a vehicle only use the upper body so the player stays seated, and walk styles cannot be changed while in a vehicle.',
         live = true,
     })
     Config = Kora.config.adopt(Config)

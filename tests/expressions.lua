@@ -36,6 +36,7 @@ local function host(configure)
     local function at(x) return setmetatable({ x = x, y = 0, z = 0 }, vec) end
     h.coords = { [1] = at(0), [20] = at(1), [30] = at(50) }
     env.PlayerPedId = function() return 1 end
+    env.IsPedInAnyVehicle = function() return false end
     env.PlayerId = function() return 0 end
     env.GetActivePlayers = function() return { 0, 2, 3 } end
     env.GetPlayerPed = function(player) return player == 2 and 20 or player == 3 and 30 or 1 end

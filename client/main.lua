@@ -68,6 +68,33 @@ local function attachProp(ped, config)
     return prop
 end
 
+local function inVehicle(ped)
+    return IsPedInAnyVehicle(ped, true)
+end
+
+-- Never ClearPedTasksImmediately in a vehicle: it removes the ped from its seat.
+local function clearPedAnim(ped)
+    if inVehicle(ped) then
+        Kora.anim.stop(ped)
+        ClearPedSecondaryTask(ped)
+    else
+        Kora.anim.clear(ped, true)
+    end
+end
+
+-- Returns an error message when this emote cannot be used from a vehicle seat.
+local function vehicleRefusal(name, emote)
+    if not inVehicle(PlayerPedId()) then return nil end
+    local vehicle = Config.vehicle or {}
+    if vehicle.allowEmotes == false then return 'Emotes cannot be used inside a vehicle.' end
+    if emote.type == 'scenario' then return 'That emote cannot be played inside a vehicle.' end
+    if emote.standing then return 'That emote cannot be played inside a vehicle.' end
+    for _, blocked in ipairs(vehicle.blockedInVehicle or {}) do
+        if blocked == name then return 'That emote cannot be played inside a vehicle.' end
+    end
+    return nil
+end
+
 local function cancelEmote(silent, skipSyncNotice)
     local wasActive = active.name ~= nil
     local previous = active
@@ -75,7 +102,7 @@ local function cancelEmote(silent, skipSyncNotice)
     clearProps(previous.props)
     active = { name = nil, props = {}, controls = nil, syncPartner = nil }
     local ped = PlayerPedId()
-    if DoesEntityExist(ped) then Kora.anim.clear(ped, true) end
+    if DoesEntityExist(ped) then clearPedAnim(ped) end
     setState('active', false)
     if previous.syncPartner and not skipSyncNotice then
         TriggerServerEvent('qbemotemenu:server:cancelSync')
@@ -103,6 +130,9 @@ local function playLocal(name)
     if not emote then return false, 'That emote is not registered.' end
     if not canUse() then return false, 'You cannot use emotes right now.' end
 
+    local refusal = vehicleRefusal(name, emote)
+    if refusal then return false, refusal end
+
     cancelEmote(true)
     local ped = PlayerPedId()
     local played, err
@@ -111,7 +141,12 @@ local function playLocal(name)
         played = true
     elseif emote.type == 'anim' then
         local handle
-        handle, err = Kora.anim.play(ped, emote.dict, emote.clip, { flag = emote.flag or 49, duration = emote.duration })
+        local flag = emote.flag or 49
+        if inVehicle(ped) and (Config.vehicle or {}).upperBodyOnly ~= false then
+            -- 48 = upper body + secondary task, 49 adds loop; keeps the legs seated.
+            flag = (flag & 1 == 1) and 49 or 48
+        end
+        handle, err = Kora.anim.play(ped, emote.dict, emote.clip, { flag = flag, duration = emote.duration })
         played = handle ~= false
     else
         return false, 'The emote has an unknown type.'
@@ -159,6 +194,8 @@ local function playEmote(name)
     local emote = emotes[name]
     if not emote then return false, 'That emote is not registered.' end
     if not emote.sync then return playLocal(name) end
+    local refusal = vehicleRefusal(name, emote)
+    if refusal then return false, refusal end
     local target = findClosestPlayer()
     if not target then return false, ('Move within %.1fm of another player.'):format(Config.syncDistance) end
     TriggerServerEvent('qbemotemenu:server:sync', GetPlayerServerId(target), name)
@@ -169,6 +206,9 @@ local function setWalk(name, quiet)
     local walk = Config.walks[name]
     if not walk then return false, 'That walk style is not configured.' end
     local ped = PlayerPedId()
+    if not quiet and inVehicle(ped) and (Config.vehicle or {}).upperBodyOnly ~= false then
+        return false, 'Walk styles cannot be changed inside a vehicle.'
+    end
     if walk.clipset then
         local loaded, err = Kora.stream.loadClipSet(walk.clipset)
         if not loaded then return false, err or 'The walk style could not be loaded.' end
