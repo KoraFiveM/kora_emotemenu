@@ -6,7 +6,7 @@ local KNOWN_CLIPS = {
     ['friends@frj@ig_1'] = { wave_a = true },
     ['anim@mp_player_intincarsalutestd@ds@'] = { idle_a = true },
     ['missminuteman_1ig_2'] = { handsup_base = true },
-    ['missheistdockssetup1clipboard@base'] = { base = true },
+    ['missfam4'] = { base = true },
     ['amb@world_human_drinking@coffee@male@idle_a'] = { idle_c = true },
     ['anim@mp_player_intcelebrationmale@air_guitar'] = { air_guitar = true },
     ['mini@strip_club@idles@dj@idle_01'] = { idle_01 = true },

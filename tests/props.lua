@@ -80,6 +80,7 @@ equal(propCount >= 2, true, 'prop emotes are present')
 -- Bone ids resolve through GetPedBoneIndex, never a PH_* name lookup.
 equal(h.exports.playEmote('clipboard'), true, 'clipboard plays')
 equal(h.boneLookups[1], 36029, 'clipboard uses the IK_L_Hand bone id its offsets were made for')
+equal(h.emotes.clipboard.dict, 'missfam4', 'clipboard uses the pose its dpemotes placement was made for')
 equal(h.attached[1][3], 9, 'attached to the resolved bone index')
 equal(h.attached[1][4], 0.16, 'shared offset used by default')
 
