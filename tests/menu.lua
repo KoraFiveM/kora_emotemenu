@@ -120,7 +120,7 @@ h.calls = {}
 h.exports.toggleMenu()
 equal(cancelItem(h.calls[1].items).disabled, false, 'cancel enabled while an emote plays')
 
--- registerEmote must work (it used an undefined copy() helper before).
+-- registerEmote must work.
 h.exports.registerEmote('testemote', { label = 'Test', type = 'anim', hidden = true, dict = 'a', clip = 'b' })
 equal(h.exports.playEmote('testemote'), true, 'registered emote plays')
 
