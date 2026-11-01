@@ -39,10 +39,10 @@ QBEEmotes = {
     clipboard = {
         label = 'Clipboard', category = 'props', type = 'anim',
         dict = 'missheistdockssetup1clipboard@base', clip = 'base', flag = 49,
-        -- Bones are ped bone ids for GetPedBoneIndex (18905 left hand, 28422 right hand IK).
-        -- PH_* names are not valid GetEntityBoneIndexByName lookups on MP peds. Values come from
-        -- community packs and are unverified in-game; tune live with Config.propOverrides.
-        prop = { model = 'p_amb_clipboard_01', bone = 18905, offset = { x = 0.16, y = 0.08, z = 0.10 }, rotation = { x = -130.0, y = -50.0, z = 0.0 } },
+        -- Bones are ped bone ids for GetPedBoneIndex. This offset/rotation is the well-known
+        -- rpemotes value for IK_L_Hand (36029); it floated away from the hand on SKEL_L_Hand
+        -- (18905). Same values suit male and female freemode peds. Tune live with Config.propOverrides.
+        prop = { model = 'p_amb_clipboard_01', bone = 36029, offset = { x = 0.16, y = 0.08, z = 0.10 }, rotation = { x = -130.0, y = -50.0, z = 0.0 } },
     },
     coffee = {
         label = 'Coffee', category = 'props', type = 'anim',
