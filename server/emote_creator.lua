@@ -108,11 +108,8 @@ RegisterNetEvent('qbemotemenu:server:saveEmote', function(payload)
     local editingName = type(payload) == 'table' and payload.editingName or nil
     if editingName ~= nil then
         editingName = text(editingName, NAME_PATTERN, 32)
-        if not editingName then
-            return notify(source, 'That saved emote could not be found. Refresh the editor and try again.')
-        end
-        editingName = editingName:lower()
-        if not QBECreatedEmotes[editingName] then
+        editingName = editingName and editingName:lower()
+        if not editingName or not QBECreatedEmotes[editingName] then
             return notify(source, 'That saved emote could not be found. Refresh the editor and try again.')
         end
     end

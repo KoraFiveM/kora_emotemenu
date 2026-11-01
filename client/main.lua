@@ -87,8 +87,7 @@ local function vehicleRefusal(name, emote)
     if not inVehicle(PlayerPedId()) then return nil end
     local vehicle = Config.vehicle or {}
     if vehicle.allowEmotes == false then return 'Emotes cannot be used inside a vehicle.' end
-    if emote.type == 'scenario' then return 'That emote cannot be played inside a vehicle.' end
-    if emote.standing then return 'That emote cannot be played inside a vehicle.' end
+    if emote.type == 'scenario' or emote.standing then return 'That emote cannot be played inside a vehicle.' end
     for _, blocked in ipairs(vehicle.blockedInVehicle or {}) do
         if blocked == name then return 'That emote cannot be played inside a vehicle.' end
     end
@@ -175,7 +174,7 @@ end
 
 local function findClosestPlayer()
     local player, distance
-    local localPed, localCoords = PlayerPedId(), GetEntityCoords(PlayerPedId())
+    local localCoords = GetEntityCoords(PlayerPedId())
     for _, candidate in ipairs(GetActivePlayers()) do
         if candidate ~= PlayerId() then
             local targetPed = GetPlayerPed(candidate)
@@ -187,7 +186,7 @@ local function findClosestPlayer()
             end
         end
     end
-    return player, localPed
+    return player
 end
 
 local function playEmote(name)
@@ -580,16 +579,15 @@ CreateThread(function()
 end)
 
 AddEventHandler('onClientResourceStop', function(resource)
-    if resource == GetCurrentResourceName() then
-        cancelEmote(true)
-        if activeWalkClip then RemoveClipSet(activeWalkClip) end
-        if activeExpression then
-            activeExpression = nil
-            ClearFacialIdleAnimOverride(PlayerPedId())
-            setState('expression', nil)
-        end
-        for _, applied in pairs(remoteExpressions) do
-            if DoesEntityExist(applied.ped) then ClearFacialIdleAnimOverride(applied.ped) end
-        end
+    if resource ~= GetCurrentResourceName() then return end
+    cancelEmote(true)
+    if activeWalkClip then RemoveClipSet(activeWalkClip) end
+    if activeExpression then
+        activeExpression = nil
+        ClearFacialIdleAnimOverride(PlayerPedId())
+        setState('expression', nil)
+    end
+    for _, applied in pairs(remoteExpressions) do
+        if DoesEntityExist(applied.ped) then ClearFacialIdleAnimOverride(applied.ped) end
     end
 end)
