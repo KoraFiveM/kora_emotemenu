@@ -33,6 +33,7 @@ local function host()
     }
     env.LocalPlayer = { state = { set = function() end } }
     env.PlayerPedId = function() return 1 end
+    env.IsPedInAnyVehicle = function() return false end
     env.DoesEntityExist = function() return true end
     env.GetCurrentResourceName = function() return 'kora_emotemenu' end
     env.IsDuplicityVersion = function() return false end
@@ -78,7 +79,7 @@ equal(propCount >= 2, true, 'prop emotes are present')
 
 -- Bone ids resolve through GetPedBoneIndex, never a PH_* name lookup.
 equal(h.exports.playEmote('clipboard'), true, 'clipboard plays')
-equal(h.boneLookups[1], 18905, 'clipboard uses the left hand bone id')
+equal(h.boneLookups[1], 36029, 'clipboard uses the IK_L_Hand bone id its offsets were made for')
 equal(h.attached[1][3], 9, 'attached to the resolved bone index')
 equal(h.attached[1][4], 0.16, 'shared offset used by default')
 

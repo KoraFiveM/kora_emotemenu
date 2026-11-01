@@ -39,10 +39,10 @@ QBEEmotes = {
     clipboard = {
         label = 'Clipboard', category = 'props', type = 'anim',
         dict = 'missheistdockssetup1clipboard@base', clip = 'base', flag = 49,
-        -- Bones are ped bone ids for GetPedBoneIndex (18905 left hand, 28422 right hand IK).
-        -- PH_* names are not valid GetEntityBoneIndexByName lookups on MP peds. Values come from
-        -- community packs and are unverified in-game; tune live with Config.propOverrides.
-        prop = { model = 'p_amb_clipboard_01', bone = 18905, offset = { x = 0.16, y = 0.08, z = 0.10 }, rotation = { x = -130.0, y = -50.0, z = 0.0 } },
+        -- Bones are ped bone ids for GetPedBoneIndex. This offset/rotation is the well-known
+        -- rpemotes value for IK_L_Hand (36029); it floated away from the hand on SKEL_L_Hand
+        -- (18905). Same values suit male and female freemode peds. Tune live with Config.propOverrides.
+        prop = { model = 'p_amb_clipboard_01', bone = 36029, offset = { x = 0.16, y = 0.08, z = 0.10 }, rotation = { x = -130.0, y = -50.0, z = 0.0 } },
     },
     coffee = {
         label = 'Coffee', category = 'props', type = 'anim',
@@ -64,19 +64,19 @@ QBEEmotes = {
     handshake = {
         label = 'Handshake', category = 'shared', type = 'anim',
         dict = 'mp_ped_interaction', clip = 'handshake_guy_a', flag = 0,
-        sync = { partner = 'handshake_partner' },
+        sync = { partner = 'handshake_partner' }, standing = true,
     },
     handshake_partner = {
-        label = 'Handshake (partner)', hidden = true, type = 'anim',
+        label = 'Handshake (partner)', hidden = true, standing = true, type = 'anim',
         dict = 'mp_ped_interaction', clip = 'handshake_guy_b', flag = 0,
     },
     hug = {
         label = 'Hug', category = 'shared', type = 'anim',
         dict = 'mp_ped_interaction', clip = 'kisses_guy_a', flag = 0,
-        sync = { partner = 'hug_partner' },
+        sync = { partner = 'hug_partner' }, standing = true,
     },
     hug_partner = {
-        label = 'Hug (partner)', hidden = true, type = 'anim',
+        label = 'Hug (partner)', hidden = true, standing = true, type = 'anim',
         dict = 'mp_ped_interaction', clip = 'kisses_guy_b', flag = 0,
     },
 }

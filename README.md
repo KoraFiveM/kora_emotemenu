@@ -29,6 +29,20 @@ The `sync` field uses a second, hidden catalogue entry as the partner emote.
 Sync distance is checked on the server before either player is instructed to
 play.
 
+## Emotes in vehicles
+
+The menu never removes a player from their seat. Inside a vehicle it does not
+call `ClearPedTasksImmediately`; cancelling uses `StopAnimTask` and
+`ClearPedSecondaryTask`. Configure it with `Config.vehicle`:
+
+- `allowEmotes` (default `true`): `false` refuses every emote in a vehicle.
+- `upperBodyOnly` (default `true`): animations play as upper-body tasks (flag
+  48/49) and walk styles cannot be changed while seated.
+- `blockedInVehicle` (default `{}`): emote names refused in a vehicle.
+
+Scenarios and emotes with `standing = true` (such as shared emotes) are always
+refused in a vehicle with a short notification.
+
 ## Client exports
 
 - `toggleMenu()`

@@ -45,6 +45,7 @@ local function host()
     }
     env.LocalPlayer = { state = { set = function() end } }
     env.PlayerPedId = function() return 1 end
+    env.IsPedInAnyVehicle = function() return false end
     env.DoesEntityExist = function() return true end
     env.GetCurrentResourceName = function() return 'kora_emotemenu' end
     env.IsDuplicityVersion = function() return false end
