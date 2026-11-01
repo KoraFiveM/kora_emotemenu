@@ -8,10 +8,13 @@ name 'kora_emotemenu'
 provide 'qbemotemenu'
 author 'qbcore2'
 version '1.0.0'
-description 'A kora_lib-native, configurable FiveM emote menu.'
+description 'A configurable FiveM emote menu with a live React emote creator.'
+
+ui_page 'ui/dist/index.html'
 
 dependencies {
-    'kora_lib'
+    'kora_lib',
+    'kora_theme'
 }
 
 shared_script '@kora_lib/init.lua'
@@ -22,9 +25,15 @@ shared_scripts {
 }
 
 client_scripts {
+    '@kora_theme/client/bridge.lua',
     'client/main.lua',
     'client/emote_creator.lua',
 }
 server_script {
     'server/**.lua'
+}
+
+files {
+    'ui/dist/index.html',
+    'ui/dist/assets/**/*'
 }

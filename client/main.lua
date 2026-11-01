@@ -500,6 +500,13 @@ RegisterNetEvent('qbemotemenu:client:addEmotes', function(created)
     if source ~= 65535 or type(created) ~= 'table' then return end
     for name, emote in pairs(created) do emotes[name] = Kora.util.deepClone(emote) end
 end)
+
+RegisterNetEvent('qbemotemenu:client:removeEmotes', function(names)
+    if source ~= 65535 or type(names) ~= 'table' then return end
+    for _, name in ipairs(names) do
+        if type(name) == 'string' then emotes[name] = nil end
+    end
+end)
 TriggerServerEvent('qbemotemenu:server:requestCreated')
 
 exports('toggleMenu', openMenu)

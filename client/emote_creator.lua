@@ -1,28 +1,17 @@
-local APP_ID = 'qbemotemenu:emote_creator'
 local MAX_PROPS = 2
-local STEP = 0.1
+local DEFAULT_STEP = 0.1
 local CREATOR_CATEGORIES = { 'general', 'dance', 'props' }
 
-local ACTION = {
-    animation = 'emote_creator:animation',
-    play = 'emote_creator:play',
-    stop = 'emote_creator:stop',
-    freecam = 'emote_creator:freecam',
-    add = 'emote_creator:add',
-    apply = 'emote_creator:apply',
-    remove = 'emote_creator:remove',
-    save = 'emote_creator:save',
-}
-
 local function newEditor()
-    return { name = '', label = '', category = 'general', dict = '', clip = '', flag = 49, props = {} }
+    return { name = '', label = '', category = 'general', dict = '', clip = '', flag = 49, step = DEFAULT_STEP, props = {} }
 end
 
 local editor = newEditor()
-local preview = { playing = false, props = {} }
+local availableEmotes = {}
+local preview = { playing = false, props = {}, models = {} }
 local freecam = { active = false, cam = nil, pos = vec3(0.0, 0.0, 0.0), yaw = 0.0, pitch = 0.0 }
 
-local buildNavigation
+local stopPreview
 
 local function notify(message, kind)
     Kora.notify.send({ title = 'Emote Maker', message = message, type = kind or 'info' })
@@ -34,10 +23,6 @@ end
 
 local function int(value, fallback)
     return math.floor(num(value, fallback))
-end
-
-local function refresh()
-    Kora.nui.updateApp(APP_ID, { navigation = buildNavigation() })
 end
 
 ------------------------------------------------------------------------
@@ -52,13 +37,25 @@ local function destroyCam()
 end
 
 local function openMenu()
-    CreateThread(function()
-        refresh()
-        local result = Kora.nui.openApp(APP_ID)
-        local reason = type(result) == 'table' and result.reason or nil
-        if reason ~= 'action' and reason ~= 'superseded' then destroyCam() end
+    local ok, playerPrimary = pcall(function()
+        return exports.kora_theme:getPlayerTheme()
     end)
+    local colorOk, defaultPrimary = pcall(function()
+        return exports.kora_theme:getPrimaryColor()
+    end)
+    local primary = ok and playerPrimary or nil
+    if type(primary) ~= 'string' or primary == '' then primary = colorOk and defaultPrimary or '#95FF00' end
+
+    SendNUIMessage({ action = 'open', editor = editor, categories = CREATOR_CATEGORIES, primary = primary })
+    SetNuiFocus(true, true)
 end
+
+AddEventHandler('qbtheme:playerThemeChanged', function()
+    local ok, primary = pcall(function()
+        return exports.kora_theme:getPlayerTheme() or exports.kora_theme:getPrimaryColor()
+    end)
+    if ok and type(primary) == 'string' then SendNUIMessage({ action = 'theme', primary = primary }) end
+end)
 
 local function stopFreecam(reopen, release)
     freecam.active = false
@@ -141,6 +138,8 @@ local function startFreecam()
     end
 
     freecam.active = true
+    SendNUIMessage({ action = 'hide' })
+    SetNuiFocus(false, false)
     CreateThread(freecamLoop)
 end
 
@@ -157,10 +156,6 @@ local function makeProp()
     }
 end
 
-local function vector(value)
-    return { x = num(value and value.x, 0.0), y = num(value and value.y, 0.0), z = num(value and value.z, 0.0) }
-end
-
 local function deleteEntity(entity)
     if not DoesEntityExist(entity) then return end
     DetachEntity(entity, true, true)
@@ -169,32 +164,38 @@ end
 
 local function detachProp(index)
     local entity = preview.props[index]
-    if not entity then return end
-    deleteEntity(entity)
+    if entity then deleteEntity(entity) end
     preview.props[index] = nil
+    preview.models[index] = nil
 end
 
 local function clearProps()
     for index in pairs(preview.props) do detachProp(index) end
 end
 
-local function stopPreview()
+stopPreview = function()
     clearProps()
     local ped = PlayerPedId()
-    if DoesEntityExist(ped) then Kora.anim.clear(ped, true) end
+    if preview.playing and DoesEntityExist(ped) then Kora.anim.clear(ped, true) end
     preview.playing = false
 end
 
 local function attachProp(index)
-    if not preview.playing then return true end
-
-    detachProp(index)
-
     local config = editor.props[index]
-    if not config or config.modelName == '' then return true end
+    if not config or config.modelName == '' then
+        detachProp(index)
+        return true
+    end
 
     local ped = PlayerPedId()
     if not DoesEntityExist(ped) then return false end
+
+    local current = preview.props[index]
+    if current and DoesEntityExist(current) and preview.models[index] == config.modelName then
+        local o, r = config.offset, config.rotation
+        AttachEntityToEntity(current, ped, GetPedBoneIndex(ped, config.bone), o.x, o.y, o.z, r.x, r.y, r.z, true, true, false, true, 1, true)
+        return true
+    end
 
     local model = joaat(config.modelName)
     if not IsModelInCdimage(model) or not IsModelValid(model) then
@@ -202,10 +203,13 @@ local function attachProp(index)
         return false
     end
 
+    detachProp(index)
     Kora.stream.loadModel(model)
 
     local coords = GetEntityCoords(ped)
-    local entity = CreateObject(model, coords.x, coords.y, coords.z, true, true, false)
+    -- Creator previews are local-only, like the props used by normal emotes.
+    -- Keeping them non-networked makes cleanup deterministic when the app closes.
+    local entity = CreateObject(model, coords.x, coords.y, coords.z, false, false, false)
     SetModelAsNoLongerNeeded(model)
 
     if not DoesEntityExist(entity) then
@@ -217,6 +221,7 @@ local function attachProp(index)
     AttachEntityToEntity(entity, ped, GetPedBoneIndex(ped, config.bone), o.x, o.y, o.z, r.x, r.y, r.z, true, true, false, true, 1, true)
 
     preview.props[index] = entity
+    preview.models[index] = config.modelName
     return true
 end
 
@@ -248,7 +253,6 @@ local function playPreview()
 end
 
 local function reattachAll()
-    if not preview.playing then return end
     clearProps()
     for index = 1, #editor.props do attachProp(index) end
 end
@@ -267,6 +271,7 @@ local function buildPayload()
 
     return {
         name = editor.name,
+        editingName = editor.editingName,
         label = editor.label,
         category = editor.category,
         dict = editor.dict,
@@ -283,238 +288,158 @@ local REQUIRED_FIELDS = {
     { 'clip', 'an animation clip' },
 }
 
-local function saveEmote()
-    for _, required in ipairs(REQUIRED_FIELDS) do
-        if editor[required[1]] == '' then
-            return { notice = { tone = 'error', message = ('Enter %s first.'):format(required[2]) } }
+------------------------------------------------------------------------
+-- React NUI bridge
+------------------------------------------------------------------------
+
+local function pushState(action)
+    SendNUIMessage({ action = action or 'state', editor = editor, categories = CREATOR_CATEGORIES, playing = preview.playing })
+end
+
+local function readUiState(data)
+    if type(data) ~= 'table' then return end
+    local previousModels = {}
+    for i, prop in ipairs(editor.props) do previousModels[i] = prop.modelName end
+
+    for _, key in ipairs({ 'name', 'label', 'category', 'dict', 'clip' }) do
+        if data[key] ~= nil then editor[key] = tostring(data[key]) end
+    end
+    editor.name = editor.name:lower()
+    if type(data.editingName) == 'string' then editor.editingName = data.editingName end
+    editor.flag = int(data.flag, editor.flag)
+    local step = tonumber(data.step)
+    if step == 0.01 or step == 0.1 or step == 1.0 or step == 10.0 then editor.step = step end
+
+    if type(data.props) == 'table' then
+        editor.props = {}
+        for i = 1, math.min(#data.props, MAX_PROPS) do
+            local value = data.props[i]
+            local prop = makeProp()
+            prop.modelName = tostring(value.modelName or '')
+            prop.bone = int(value.bone, 0)
+            prop.offset = {
+                x = num(value.offset and value.offset.x, 0.0),
+                y = num(value.offset and value.offset.y, 0.0),
+                z = num(value.offset and value.offset.z, 0.0),
+            }
+            prop.rotation = {
+                x = num(value.rotation and value.rotation.x, 0.0),
+                y = num(value.rotation and value.rotation.y, 0.0),
+                z = num(value.rotation and value.rotation.z, 0.0),
+            }
+            editor.props[i] = prop
         end
     end
 
-    TriggerServerEvent('qbemotemenu:server:saveEmote', buildPayload())
-end
-
-------------------------------------------------------------------------
--- AppShell
-------------------------------------------------------------------------
-
-local function categoryOptions()
-    local options = {}
-    for _, key in ipairs(CREATOR_CATEGORIES) do
-        local category = Config.categories[key]
-        if category then options[#options + 1] = { value = key, label = category.label } end
+    for i, prop in ipairs(editor.props) do
+        if previousModels[i] == prop.modelName then attachProp(i) end
     end
-    return options
 end
 
-local function propFields(prop)
-    local function field(id, label, value, extra)
-        local f = { id = id, label = label, type = 'number', step = STEP, value = value }
-        for k, v in pairs(extra or {}) do f[k] = v end
-        return f
-    end
+RegisterNUICallback('creator:change', function(data, cb)
+    readUiState(data)
+    cb({ ok = true })
+end)
 
-    return {
-        { id = 'modelName', label = 'Model', type = 'text', value = prop.modelName },
-        field('bone', 'Bone', prop.bone, { step = 1, wholeNumber = true }),
-        field('offsetX', 'Offset X', prop.offset.x),
-        field('offsetY', 'Offset Y', prop.offset.y),
-        field('offsetZ', 'Offset Z', prop.offset.z),
-        field('rotationX', 'Rotation X', prop.rotation.x),
-        field('rotationY', 'Rotation Y', prop.rotation.y),
-        field('rotationZ', 'Rotation Z', prop.rotation.z),
-    }
-end
-
-local function animationBlock()
-    return {
-        type = 'list',
-        id = 'animation',
-        label = 'Animation',
-        items = { {
-            id = 'animation_editor',
-            label = editor.label ~= '' and editor.label or 'Animation Settings',
-            description = ('Name: %s | Dict: %s | Clip: %s | Flag: %d'):format(
-                editor.name ~= '' and editor.name or 'Unnamed',
-                editor.dict ~= '' and editor.dict or 'Not set',
-                editor.clip ~= '' and editor.clip or 'Not set',
-                editor.flag
-            ),
-            action = {
-                id = ACTION.animation,
-                label = 'Apply',
-                fields = {
-                    { id = 'name', label = 'Name', type = 'text', value = editor.name, required = true },
-                    { id = 'label', label = 'Label', type = 'text', value = editor.label, required = true },
-                    { id = 'category', label = 'Category', type = 'select', value = editor.category, options = categoryOptions(), required = true },
-                    { id = 'dict', label = 'Dict', type = 'text', value = editor.dict, required = true },
-                    { id = 'clip', label = 'Clip', type = 'text', value = editor.clip, required = true },
-                    { id = 'flag', label = 'Flag', type = 'number', value = editor.flag },
-                },
-            },
-        } },
-    }
-end
-
-local function previewBlock()
-    return {
-        type = 'list',
-        id = 'controls',
-        label = 'Preview',
-        items = {
-            { id = 'play', label = preview.playing and 'Restart Preview' or 'Play Preview', action = { id = ACTION.play, label = 'Play' } },
-            { id = 'stop', label = 'Stop Preview', action = { id = ACTION.stop, label = 'Stop' } },
-            {
-                id = 'freecam',
-                label = 'Freecam',
-                description = 'Hides this menu so you can fly around your ped. Enter brings the menu back and holds the camera until you close it.',
-                action = { id = ACTION.freecam, label = 'Start', closeBeforeAction = true },
-            },
-        },
-    }
-end
-
-local function propBlock(index, prop)
-    return {
-        type = 'list',
-        id = 'prop' .. index,
-        label = 'Prop ' .. index,
-        items = {
-            {
-                id = 'prop_editor_' .. index,
-                label = prop.modelName ~= '' and prop.modelName or 'Configure Prop',
-                description = ('Bone: %d | Offset: %.3f, %.3f, %.3f | Rotation: %.1f, %.1f, %.1f'):format(
-                    prop.bone,
-                    prop.offset.x, prop.offset.y, prop.offset.z,
-                    prop.rotation.x, prop.rotation.y, prop.rotation.z
-                ),
-                action = { id = ACTION.apply .. ':' .. index, label = 'Apply', fields = propFields(prop) },
-            },
-            { id = 'remove_prop_' .. index, label = 'Remove Prop', action = { id = ACTION.remove .. ':' .. index, label = 'Remove' } },
-        },
-    }
-end
-
-function buildNavigation()
-    local blocks = { animationBlock(), previewBlock() }
-
-    for index, prop in ipairs(editor.props) do
-        blocks[#blocks + 1] = propBlock(index, prop)
-    end
-
-    if #editor.props < MAX_PROPS then
-        blocks[#blocks + 1] = {
-            type = 'list',
-            id = 'add_prop',
-            items = { {
-                id = 'add_prop_item',
-                label = 'Add Prop',
-                description = ('%d/%d props configured'):format(#editor.props, MAX_PROPS),
-                action = { id = ACTION.add, label = 'Add' },
-            } },
-        }
-    end
-
-    blocks[#blocks + 1] = {
-        type = 'list',
-        id = 'export',
-        label = 'Output',
-        items = { {
-            id = 'save',
-            label = 'Save Emote',
-            description = 'Adds this emote to the menu for everyone. Requires admin permission.',
-            action = { id = ACTION.save, label = 'Save', confirm = 'Save this emote to the server?' },
-        } },
-    }
-
-    return { { id = 'maker', label = 'Emote Maker', icon = 'WandSparkles', content = { title = 'Emote Maker', blocks = blocks } } }
-end
-
-------------------------------------------------------------------------
--- Actions
-------------------------------------------------------------------------
-
-local function readAnimation(context)
-    local value = context.value or {}
-    editor.name = tostring(value.name or editor.name):lower()
-    editor.label = tostring(value.label or editor.label)
-    editor.category = tostring(value.category or editor.category)
-    editor.dict = tostring(value.dict or editor.dict)
-    editor.clip = tostring(value.clip or editor.clip)
-    editor.flag = int(value.flag, editor.flag)
-end
-
-local function readProp(context, index)
-    local prop, value = editor.props[index], context.value or {}
-    if not prop then return end
-
-    prop.modelName = tostring(value.modelName or prop.modelName)
-    prop.bone = int(value.bone, prop.bone)
-    prop.offset = { x = num(value.offsetX, prop.offset.x), y = num(value.offsetY, prop.offset.y), z = num(value.offsetZ, prop.offset.z) }
-    prop.rotation = { x = num(value.rotationX, prop.rotation.x), y = num(value.rotationY, prop.rotation.y), z = num(value.rotationZ, prop.rotation.z) }
-end
-
--- Actions that need no argument beyond the action context.
-local handlers = {
-    [ACTION.animation] = function(context)
-        readAnimation(context)
-        if preview.playing then playPreview() end
-        refresh()
-    end,
-    [ACTION.play] = function()
+RegisterNUICallback('creator:action', function(data, cb)
+    local action = type(data) == 'table' and data.action or nil
+    if action == 'play' then
         playPreview()
-        refresh()
-    end,
-    [ACTION.stop] = function()
+    elseif action == 'stop' then
         stopPreview()
-        refresh()
-    end,
-    -- The shell is already closed (closeBeforeAction). Editor state lives in
-    -- `editor`/`preview`, so reopening rebuilds the menu with your data.
-    [ACTION.freecam] = startFreecam,
-    [ACTION.add] = function()
-        if #editor.props >= MAX_PROPS then return end
+    elseif action == 'new' then
+        stopPreview()
+        editor = newEditor()
+    elseif action == 'add' and #editor.props < MAX_PROPS then
         editor.props[#editor.props + 1] = makeProp()
-        refresh()
-    end,
-    [ACTION.save] = saveEmote,
-}
+    elseif action == 'remove' then
+        local index = tonumber(data.index)
+        if index and editor.props[index] then
+            detachProp(index)
+            table.remove(editor.props, index)
+            reattachAll()
+        end
+    elseif action == 'apply' then
+        local index = tonumber(data.index)
+        if index then attachProp(index) end
+    elseif action == 'freecam' then
+        startFreecam()
+    elseif action == 'load-list' then
+        TriggerServerEvent('qbemotemenu:server:requestEmotesForEdit')
+    elseif action == 'delete' and type(data.name) == 'string' then
+        TriggerServerEvent('qbemotemenu:server:deleteCreatedEmote', data.name)
+    elseif action == 'load' and type(data.name) == 'string' then
+        local emote = availableEmotes[data.name]
+        if emote then
+            stopPreview()
+            local props = {}
+            for _, slot in ipairs({ 'prop', 'proptwo' }) do
+                local savedProp = emote[slot]
+                if type(savedProp) == 'table' then
+                    props[#props + 1] = {
+                        modelName = savedProp.model,
+                        bone = savedProp.bone,
+                        offset = savedProp.offset,
+                        rotation = savedProp.rotation,
+                    }
+                end
+            end
+            editor = {
+                name = data.name,
+                editingName = data.name,
+                label = emote.label,
+                category = emote.category,
+                dict = emote.dict,
+                clip = emote.clip,
+                flag = emote.flag,
+                step = editor.step,
+                props = props,
+            }
+            SendNUIMessage({ action = 'loaded', editor = editor })
+        end
+    elseif action == 'save' then
+        for _, required in ipairs(REQUIRED_FIELDS) do
+            if editor[required[1]] == '' then
+                notify(('Enter %s first.'):format(required[2]), 'error')
+                cb({ ok = false })
+                return
+            end
+        end
+        TriggerServerEvent('qbemotemenu:server:saveEmote', buildPayload())
+    end
+    pushState()
+    cb({ ok = true })
+end)
 
--- Actions that carry a prop index as ':<n>'.
-local indexedHandlers = {
-    [ACTION.apply] = function(index, context)
-        readProp(context, index)
-        attachProp(index)
-        refresh()
-    end,
-    [ACTION.remove] = function(index)
-        if not editor.props[index] then return end
-        table.remove(editor.props, index)
-        reattachAll() -- indexes shifted, so rebuild whatever is still attached
-        refresh()
-    end,
-}
+RegisterNetEvent('qbemotemenu:client:creatorEmotes', function(created)
+    if source ~= 65535 or type(created) ~= 'table' then return end
+    availableEmotes = created
+    local list = {}
+    for name, emote in pairs(created) do
+        list[#list + 1] = { name = name, label = emote.label or name, category = emote.category or 'general' }
+    end
+    table.sort(list, function(a, b) return a.label:lower() < b.label:lower() end)
+    SendNUIMessage({ action = 'savedEmotes', emotes = list })
+end)
 
-Kora.nui.registerApp({
-    id = APP_ID,
-    title = 'Emote Maker',
-    description = 'Create and preview emotes with up to two props.',
-    icon = 'WandSparkles',
-    layout = 'compact',
-    width = 620,
-    height = 760,
-    placement = 'right',
-    footer = 'Press Escape to close',
-    navigation = buildNavigation(),
+RegisterNetEvent('qbemotemenu:client:emoteDeleted', function(name)
+    if source ~= 65535 or type(name) ~= 'string' then return end
+    availableEmotes[name] = nil
+    if editor.editingName == name then
+        stopPreview()
+        editor = newEditor()
+        SendNUIMessage({ action = 'resetDeletedEditor', editor = editor })
+    end
+end)
 
-    onAction = function(actionId, context)
-        local handler = handlers[actionId]
-        if handler then return handler(context) end
-
-        local base, index = actionId:match('^(.+):(%d+)$')
-        handler = indexedHandlers[base]
-        if handler then return handler(tonumber(index), context) end
-    end,
-})
+RegisterNUICallback('creator:close', function(_, cb)
+    SetNuiFocus(false, false)
+    if not freecam.active then
+        stopPreview()
+        destroyCam()
+    end
+    cb({ ok = true })
+end)
 
 RegisterNetEvent('qbemotemenu:client:openEmoteCreator', function()
     if source ~= 65535 or freecam.active then return end
@@ -525,7 +450,8 @@ RegisterNetEvent('qbemotemenu:client:emoteSaved', function()
     if source ~= 65535 then return end
     stopPreview()
     editor = newEditor()
-    refresh()
+    SendNUIMessage({ action = 'close' })
+    SetNuiFocus(false, false)
 end)
 
 AddEventHandler('onResourceStop', function(resource)
