@@ -11,8 +11,6 @@ local availableEmotes = {}
 local preview = { playing = false, props = {}, models = {} }
 local freecam = { active = false, cam = nil, pos = vec3(0.0, 0.0, 0.0), yaw = 0.0, pitch = 0.0 }
 
-local stopPreview
-
 local function notify(message, kind)
     Kora.notify.send({ title = 'Emote Maker', message = message, type = kind or 'info' })
 end
@@ -165,7 +163,7 @@ local function clearProps()
     for index in pairs(preview.props) do detachProp(index) end
 end
 
-stopPreview = function()
+local function stopPreview()
     clearProps()
     local ped = PlayerPedId()
     if preview.playing and DoesEntityExist(ped) then Kora.anim.clear(ped, true) end

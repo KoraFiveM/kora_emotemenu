@@ -27,8 +27,9 @@ RegisterNetEvent('qbemotemenu:server:sync', function(target, emoteName)
     local source = source
     if type(emoteName) ~= 'string' then return end
     if not requestCooldown.use(source) then return end
+    emoteName = emoteName:lower()
     local current = GetGameTimer()
-    local ok, emoteOrReason = validSync(source, target, emoteName:lower())
+    local ok, emoteOrReason = validSync(source, target, emoteName)
     if not ok then
         return Kora.notify.send(source, { title = 'Emotes', message = emoteOrReason, type = 'error' })
     end
@@ -44,7 +45,7 @@ RegisterNetEvent('qbemotemenu:server:sync', function(target, emoteName)
         id = nextInviteId,
         source = source,
         target = target,
-        emote = emoteName:lower(),
+        emote = emoteName,
         partnerEmote = emoteOrReason.sync.partner,
         expiresAt = current + Config.syncInviteTTL,
     }
@@ -108,4 +109,3 @@ AddEventHandler('playerDropped', function()
         TriggerClientEvent('qbemotemenu:client:cancelSynced', partner, source)
     end
 end)
-
