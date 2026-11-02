@@ -43,6 +43,14 @@ call `ClearPedTasksImmediately`; cancelling uses `StopAnimTask` and
 Scenarios and emotes with `standing = true` (such as shared emotes) are always
 refused in a vehicle with a short notification.
 
+## Cuffed players
+
+A cuffed player cannot start an emote (from the menu, `/e`, a shared-emote invite
+or the `playEmote` export), and an emote that is running is cancelled the moment
+they are cuffed. The check reads `LocalPlayer.state.koraCuffed`, which kora_police
+sets from the server, plus the `isCuffed` and `handcuffed` keys used by other
+cuff scripts. `Config.blockWhenCuffed = false` lets cuffed players emote.
+
 ## Client exports
 
 - `toggleMenu()`

@@ -22,6 +22,11 @@ Config.syncCooldown = 3000
 Config.persistAppearance = true
 Config.cancelControl = 73 -- X
 
+-- Cuffed players cannot start an emote, and a running one is cancelled the moment they
+-- are cuffed. Reads LocalPlayer.state.koraCuffed (set by kora_police) plus the isCuffed
+-- and handcuffed keys. false lets cuffed players emote.
+Config.blockWhenCuffed = true
+
 -- These controls are disabled while an emote explicitly opts into blocking
 -- movement. Combat is deliberately never disabled globally: the animation
 -- itself is cancelled if the player needs to defend themselves.

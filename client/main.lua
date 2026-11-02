@@ -17,9 +17,14 @@ local function setState(key, value)
     LocalPlayer.state:set(('qbemotemenu:%s'):format(key), value, true)
 end
 
+-- `koraCuffed` is the replicated bag kora_police's server writes; the other two are
+-- the keys third-party cuff scripts use. A cuffed player can neither start an emote
+-- nor keep one: the cancel monitor below stops a running emote on the next frame.
 local function canUse()
     local state = LocalPlayer.state
-    return not state.isDead and not state.dead and not state.isCuffed and not state.handcuffed
+    if state.isDead or state.dead then return false end
+    if Config.blockWhenCuffed ~= false and (state.koraCuffed or state.isCuffed or state.handcuffed) then return false end
+    return true
 end
 
 local function clearProps(props)
@@ -193,6 +198,7 @@ local function playEmote(name)
     local emote = emotes[name]
     if not emote then return false, 'That emote is not registered.' end
     if not emote.sync then return playLocal(name) end
+    if not canUse() then return false, 'You cannot use emotes right now.' end
     local refusal = vehicleRefusal(name, emote)
     if refusal then return false, refusal end
     local target = findClosestPlayer()
