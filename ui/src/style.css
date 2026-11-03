@@ -68,6 +68,7 @@ button { cursor: pointer; }
 }
 .eyebrow { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: 1.15px; }
 h1, h2, p { margin: 0; }
+h1, h2, h3 { font-family: var(--font-heading, var(--font-sans, Inter, system-ui, sans-serif)); }
 h1 { margin-top: 2px; font-size: 18px; font-weight: 650; letter-spacing: -.3px; }
 .icon-button {
   display: grid;
