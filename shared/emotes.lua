@@ -26,7 +26,7 @@ QBEEmotes = {
     },
     surrender = {
         label = 'Hands up', category = 'general', type = 'anim',
-        dict = 'missminuteman_1ig_2', clip = 'handsup_base', flag = 49, blockMovement = true,
+        dict = 'missminuteman_1ig_2', clip = 'handsup_base', flag = 49, blockMovement = true, handsUp = true,
     },
     sit = {
         label = 'Sit', category = 'scenarios', type = 'scenario',

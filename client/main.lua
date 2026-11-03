@@ -3,6 +3,8 @@ local active = { name = nil, props = {}, controls = nil, syncPartner = nil }
 local menuOpen = false
 local lastEmote = nil
 local activeWalkClip = nil
+local activeWalkName = 'default'
+local cancelHintId = nil
 local cancelMonitorRunning = false
 local MENU_APP_ID = 'qbemotemenu:menu'
 local appSelection
@@ -99,8 +101,36 @@ local function vehicleRefusal(name, emote)
     return nil
 end
 
+local function hideCancelHint()
+    if not cancelHintId then return end
+    local id = cancelHintId
+    cancelHintId = nil
+    if Kora.textui then Kora.textui.hide(id) end
+end
+
+-- Only emotes that do not stop by themselves need a reminder.
+local function needsCancelHint(emote)
+    if emote.type == 'scenario' or emote.prop or emote.proptwo then return true end
+    return (emote.flag or 49) & 1 == 1 and not emote.duration
+end
+
+local function cancelKeyLabel()
+    local ok, value = pcall(GetControlInstructionalButton, 0, Config.cancelControl, true)
+    if ok and type(value) == 'string' and value ~= '' then return (value:gsub('^[bt]_', '', 1)) end
+    return tostring(Config.cancelControl)
+end
+
+local function showCancelHint(name, emote)
+    hideCancelHint()
+    local hint = Config.cancelHint
+    if not hint or hint.enabled == false or not Kora.textui or not needsCancelHint(emote) then return end
+    local ok, id = pcall(Kora.textui.show, hint.text or 'Cancel emote', { key = cancelKeyLabel(), position = hint.position })
+    if ok then cancelHintId = id end
+end
+
 local function cancelEmote(silent, skipSyncNotice)
     local wasActive = active.name ~= nil
+    hideCancelHint()
     local previous = active
     if previous.controls then Kora.controls.release(previous.controls) end
     clearProps(previous.props)
@@ -127,6 +157,18 @@ local function startCancelMonitor()
         end
         cancelMonitorRunning = false
     end)
+end
+
+-- Walking, strafing and sprint/jump are the movement controls hands up may leave enabled.
+local MOVEMENT_CONTROLS = { [21] = true, [22] = true, [30] = true, [31] = true, [32] = true, [33] = true, [34] = true, [35] = true }
+
+local function blockedControlsFor(emote)
+    if not (emote.handsUp and Config.handsUpAllowMovement ~= false) then return Config.blockedControls end
+    local controls = {}
+    for _, control in ipairs(Config.blockedControls) do
+        if not MOVEMENT_CONTROLS[control] then controls[#controls + 1] = control end
+    end
+    return controls
 end
 
 local function playLocal(name)
@@ -158,7 +200,7 @@ local function playLocal(name)
     if not played then return false, err or 'The animation could not be loaded.' end
 
     active.name = name
-    if emote.blockMovement then active.controls = Kora.controls.acquire(Config.blockedControls, { disablePlayerFiring = true }) end
+    if emote.blockMovement then active.controls = Kora.controls.acquire(blockedControlsFor(emote), { disablePlayerFiring = true }) end
     for _, slot in ipairs({ 'prop', 'proptwo' }) do
         local config = getPropConfig(name, slot)
         if config then
@@ -172,6 +214,7 @@ local function playLocal(name)
     end
     setState('active', name)
     setState('last', name)
+    showCancelHint(name, emote)
     lastEmote = name
     startCancelMonitor()
     return true
@@ -225,6 +268,7 @@ local function setWalk(name, quiet)
         if activeWalkClip then RemoveClipSet(activeWalkClip) end
         activeWalkClip = nil
     end
+    activeWalkName = name
     setState('walk', name)
     if Config.persistAppearance then SetResourceKvp('walk', name) end
     if not quiet then notify(('Walk style: %s'):format(walk.label)) end
@@ -234,6 +278,7 @@ end
 local EXPRESSION_DICTS = { male = 'facials@gen_male@base', female = 'facials@gen_female@base' }
 local EXPRESSION_STATE = 'qbemotemenu:expression'
 local activeExpression = nil -- nil means no override
+local activeExpressionName = 'default' -- the menu entry last chosen, including entries without an anim
 local remoteExpressions = {} -- [serverId] = { ped = handle, name = expression }
 local noticeTimes = {} -- ['serverId:name'] = game timer of the last notice
 local expressionLoopRunning = false
@@ -325,6 +370,7 @@ local function setExpression(name, quiet)
     local expression = Config.expressions[name]
     if not expression then return false, 'That expression is not configured.' end
     activeExpression = expression.anim and name or nil
+    activeExpressionName = name
     applyExpression(PlayerPedId(), activeExpression)
     setState('expression', activeExpression)
     if Config.persistAppearance then SetResourceKvp('expression', name) end
@@ -343,9 +389,24 @@ local function visibleEmotes(category)
     return items
 end
 
-local function optionItems(values, prefix)
+local function themeColor()
+    local ok, color = pcall(function() return exports.kora_theme:getPlayerTheme() or exports.kora_theme:getPrimaryColor() end)
+    if ok and type(color) == 'string' and color ~= '' then return color end
+    return nil
+end
+
+-- The radial menu has no checkmark or initial highlight, so the current choice gets a check icon in the
+-- theme colour plus a description that says it is active; the context menu shows the same.
+local function optionItems(values, prefix, current)
     local items = {}
-    for name, entry in pairs(values or {}) do items[#items + 1] = { id = prefix .. name, label = entry.label or name, icon = 'Circle' } end
+    local color = themeColor()
+    for name, entry in pairs(values or {}) do
+        local item = { id = prefix .. name, label = entry.label or name, icon = 'Circle' }
+        if name == current then
+            item.icon, item.iconColor, item.description = 'CircleCheck', color, 'Currently active'
+        end
+        items[#items + 1] = item
+    end
     table.sort(items, function(a, b) return a.label < b.label end)
     return items
 end
@@ -360,7 +421,7 @@ local function menuItems()
     end
     table.sort(items, function(a, b) return a.label < b.label end)
     -- An option group with nothing in it would open as an empty page, so leave it out.
-    local walks, expressions = optionItems(Config.walks, 'walk:'), optionItems(Config.expressions, 'expression:')
+    local walks, expressions = optionItems(Config.walks, 'walk:', activeWalkName), optionItems(Config.expressions, 'expression:', activeExpressionName)
     if #walks > 0 then items[#items + 1] = { id = 'walk', label = 'Walk style', icon = 'Footprints', submenu = { title = 'Walk style', items = walks } } end
     if #expressions > 0 then items[#items + 1] = { id = 'expression', label = 'Expression', icon = 'ScanFace', submenu = { title = 'Expression', items = expressions } } end
     items[#items + 1] = { id = 'cancel', label = 'Cancel emote', icon = 'CircleX', disabled = active.name == nil, description = active.name and 'Stop the current emote' or 'No emote is playing' }
@@ -396,7 +457,7 @@ local function appNavigation(items)
         local rows = {}
         if item.submenu then
             for _, entry in ipairs(item.submenu.items) do
-                rows[#rows + 1] = { id = entry.id, label = entry.label, icon = entry.icon, action = { id = entry.id, label = 'Select' } }
+                rows[#rows + 1] = { id = entry.id, label = entry.label, description = entry.description, icon = entry.icon, action = { id = entry.id, label = 'Select' } }
             end
         else
             rows[1] = { id = item.id, label = item.label, description = item.description, icon = item.icon, action = { id = item.id, label = 'Select', disabled = item.disabled } }
@@ -590,6 +651,7 @@ AddEventHandler('onClientResourceStop', function(resource)
     if activeWalkClip then RemoveClipSet(activeWalkClip) end
     if activeExpression then
         activeExpression = nil
+        activeExpressionName = 'default'
         ClearFacialIdleAnimOverride(PlayerPedId())
         setState('expression', nil)
     end

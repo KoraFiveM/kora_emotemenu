@@ -22,6 +22,21 @@ Config.syncCooldown = 3000
 Config.persistAppearance = true
 Config.cancelControl = 73 -- X
 
+-- On-screen reminder of how to stop an emote. Shown (through kora_lib's text UI) when a looping
+-- emote, a scenario or a prop emote starts, with the key taken from Config.cancelControl, and
+-- hidden as soon as the emote ends. enabled = false turns it off.
+Config.cancelHint = {
+    enabled = true,
+    text = 'Cancel emote',
+    position = 'right-center', -- left-center, right-center, top-center or bottom-center
+}
+
+-- Emotes marked `handsUp = true` (General > Hands up) normally block movement. With this on
+-- the player can walk while their hands are up; sprinting, jumping, entering vehicles, aiming and
+-- firing stay blocked so it cannot be used to shoot with the hands raised. false restores the
+-- old behaviour where every control in Config.blockedControls is disabled.
+Config.handsUpAllowMovement = true
+
 -- Cuffed players cannot start an emote, and a running one is cancelled the moment they
 -- are cuffed. Reads LocalPlayer.state.koraCuffed (set by kora_police) plus the isCuffed
 -- and handcuffed keys. false lets cuffed players emote.
@@ -118,6 +133,16 @@ if Kora and Kora.config and Kora.config.adopt then
     Config.vehicle.upperBodyOnly = Kora.config.boolean(Config.vehicle.upperBodyOnly, {
         label = 'Upper-body emotes in vehicles',
         description = 'When enabled, animations played inside a vehicle only use the upper body so the player stays seated, and walk styles cannot be changed while in a vehicle.',
+        live = true,
+    })
+    Config.cancelHint.enabled = Kora.config.boolean(Config.cancelHint.enabled, {
+        label = 'Cancel emote hint',
+        description = 'When enabled, a prompt such as "[X] Cancel emote" is shown on screen while a looping, scenario or prop emote is playing, and hidden when it ends. The key shown follows the configured cancel control.',
+        live = true,
+    })
+    Config.handsUpAllowMovement = Kora.config.boolean(Config.handsUpAllowMovement, {
+        label = 'Walk with hands up',
+        description = 'When enabled, players can walk while the Hands up emote is playing. Sprinting, jumping, entering vehicles, aiming and firing stay blocked. When disabled, hands up blocks all movement controls like other blocking emotes.',
         live = true,
     })
     Config = Kora.config.adopt(Config)
