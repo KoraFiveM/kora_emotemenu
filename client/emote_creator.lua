@@ -74,15 +74,22 @@ local function stopFreecam(reopen, release)
     if reopen then openMenu() end
 end
 
-local function showFreecamHelp()
+-- A 'STRING' substring is capped at 99 characters, which cut the help off after "W A S D Move".
+-- A registered text entry has no such cap, so the full help is registered once per freecam start.
+local HELP_ENTRY = 'KORA_EMOTE_MAKER_FREECAM'
+
+local function registerFreecamHelp()
     local hint = makerCfg.hint or {}
-    BeginTextCommandDisplayHelp('STRING')
-    AddTextComponentSubstringPlayerName(
+    AddTextEntry(HELP_ENTRY,
         (hint.exit or '~INPUT_FRONTEND_ACCEPT~ Back to menu') .. '~n~' ..
         '~INPUT_MOVE_UP_ONLY~~INPUT_MOVE_LEFT_ONLY~~INPUT_MOVE_DOWN_ONLY~~INPUT_MOVE_RIGHT_ONLY~ Move  ' ..
         '~INPUT_LOOK_LR~ Look  ~INPUT_COVER~ Up  ~INPUT_PICKUP~ Down  ' ..
         '~INPUT_SPRINT~ Fast  ~INPUT_DUCK~ Slow'
     )
+end
+
+local function showFreecamHelp()
+    BeginTextCommandDisplayHelp(HELP_ENTRY)
     EndTextCommandDisplayHelp(0, false, false, -1)
 end
 
@@ -156,6 +163,7 @@ local function startFreecam()
 
     freecam.active = true
     setUiBlocked(true)
+    registerFreecamHelp()
     SendNUIMessage({ action = 'hide' })
     SetNuiFocus(false, false)
     CreateThread(freecamLoop)
