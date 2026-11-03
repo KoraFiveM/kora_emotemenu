@@ -56,7 +56,11 @@ local function openMenu()
     local primary = ok and playerPrimary or nil
     if type(primary) ~= 'string' or primary == '' then primary = colorOk and defaultPrimary or '#95FF00' end
 
-    SendNUIMessage({ action = 'open', editor = editor, categories = CREATOR_CATEGORIES, primary = primary })
+    local maxLabel = tonumber(makerCfg.maxLabelLength)
+    SendNUIMessage({
+        action = 'open', editor = editor, categories = CREATOR_CATEGORIES, primary = primary,
+        maxLabelLength = maxLabel and maxLabel > 0 and math.floor(maxLabel) or nil,
+    })
     SetNuiFocus(true, true)
 end
 

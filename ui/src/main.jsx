@@ -41,6 +41,7 @@ function App() {
   const [visible, setVisible] = useState(false)
   const [editor, setEditor] = useState(INITIAL)
   const [categories, setCategories] = useState(['general', 'dance', 'props'])
+  const [maxLabel, setMaxLabel] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [savedEmotes, setSavedEmotes] = useState([])
   const [savedLoaded, setSavedLoaded] = useState(false)
@@ -56,6 +57,7 @@ function App() {
         setShowSaved(false)
         setEditor({ ...INITIAL, ...(message.editor || {}), props: message.editor?.props || [] })
         setCategories(message.categories || ['general', 'dance', 'props'])
+        setMaxLabel(Number(message.maxLabelLength) || 0)
         setPlaying(Boolean(message.playing))
         setVisible(true)
       } else if (message.action === 'state') {
@@ -153,7 +155,7 @@ function App() {
           <div className="section-heading"><div><div className="eyebrow">01 / ANIMATION</div><h2>Animation details</h2></div></div>
           <div className="field-grid">
             <label className="field"><span>Emote name</span><input value={editor.name} onChange={e => update({ name: e.target.value })} placeholder="e.g. coffee_idle" /></label>
-            <label className="field"><span>Display label</span><input value={editor.label} onChange={e => update({ label: e.target.value })} placeholder="e.g. Drinking Coffee" /></label>
+            <label className="field"><span>Display label</span><input value={editor.label} maxLength={maxLabel || undefined} onChange={e => update({ label: e.target.value })} placeholder="e.g. Drinking Coffee" />{maxLabel > 0 && <small>{(editor.label || "").length}/{maxLabel} characters</small>}</label>
             <label className="field"><span>Animation dictionary</span><input value={editor.dict} onChange={e => update({ dict: e.target.value })} placeholder="anim@amb@clubhouse@bar@drink@" /></label>
             <label className="field"><span>Animation clip</span><input value={editor.clip} onChange={e => update({ clip: e.target.value })} placeholder="idle_a" /></label>
             <label className="field"><span>Category</span><select value={editor.category} onChange={e => update({ category: e.target.value })}>{categories.map(category => <option key={category} value={category}>{category}</option>)}</select></label>
