@@ -51,6 +51,18 @@ they are cuffed. The check reads `LocalPlayer.state.koraCuffed`, which kora_poli
 sets from the server, plus the `isCuffed` and `handcuffed` keys used by other
 cuff scripts. `Config.blockWhenCuffed = false` lets cuffed players emote.
 
+## Cancel hint, hands up and menu markers
+
+- `Config.cancelHint` (default `enabled = true`): while a looping emote, scenario or prop emote
+  plays, a kora_lib text UI prompt such as `[X] Cancel emote` is shown with the key from
+  `Config.cancelControl`, and hidden when the emote ends. `text` and `position` are configurable.
+- `Config.handsUpAllowMovement` (default `true`): emotes with `handsUp = true` (General > Hands up)
+  let the player walk; sprint, jump, vehicle entry, aiming and firing stay blocked. `false`
+  restores the full `Config.blockedControls` block.
+- The Walk style and Expression menus mark the active choice with a check icon in the kora_theme
+  colour and a "Currently active" description. Both are remembered for the session (and across
+  restarts with `Config.persistAppearance`) and return to Default after `resetWalk` / `resetExpression`.
+
 ## Client exports
 
 - `toggleMenu()`
