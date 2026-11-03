@@ -147,3 +147,19 @@ if Kora and Kora.config and Kora.config.adopt then
     })
     Config = Kora.config.adopt(Config)
 end
+
+-- Emote Maker (/emotemaker) settings.
+--   exitControls    control ids that leave the freecam and return to the menu, keeping the current view.
+--                   Default Enter (191), Backspace (177) and Escape (200); Escape never opens the pause map
+--                   while the freecam is active. Running the emote maker command again also returns.
+--   hint.exit       first line of the freecam help text. Use ~INPUT_NAME~ tokens for the key, and match it to
+--                   the first control in exitControls (Enter = ~INPUT_FRONTEND_ACCEPT~).
+--   blockUi         true sets the LocalPlayer.state.koraUiBlocked bag while the freecam is active. Inventory,
+--                   phone and other UIs that check this bag stay closed. false never sets it.
+--   maxLabelLength  longest emote label the creator accepts (extra characters are cut). 0 = no limit.
+Config.emoteMaker = {
+    exitControls = { 191, 177, 200 },
+    hint = { exit = '~INPUT_FRONTEND_ACCEPT~ Back to menu (Enter / Backspace / Esc)' },
+    blockUi = true,
+    maxLabelLength = 24,
+}

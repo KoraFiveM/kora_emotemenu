@@ -11,6 +11,22 @@ local availableEmotes = {}
 local preview = { playing = false, props = {}, models = {} }
 local freecam = { active = false, cam = nil, pos = vec3(0.0, 0.0, 0.0), yaw = 0.0, pitch = 0.0 }
 
+local makerCfg = Config.emoteMaker or {}
+-- Bag read by UIs that should not open while the emote maker camera is up (documented in config.lua).
+local UI_BLOCK_KEY = 'koraUiBlocked'
+local FRONTEND_PAUSE, FRONTEND_PAUSE_ALT = 199, 200
+
+local function exitControls()
+    local list = makerCfg.exitControls
+    if type(list) ~= 'table' or #list == 0 then list = { 191 } end
+    return list
+end
+
+local function setUiBlocked(blocked)
+    if makerCfg.blockUi == false then return end
+    LocalPlayer.state:set(UI_BLOCK_KEY, blocked and true or nil, false)
+end
+
 local function notify(message, kind)
     Kora.notify.send({ title = 'Emote Maker', message = message, type = kind or 'info' })
 end
@@ -53,16 +69,19 @@ end)
 
 local function stopFreecam(reopen, release)
     freecam.active = false
+    setUiBlocked(false)
     if release then destroyCam() end
     if reopen then openMenu() end
 end
 
 local function showFreecamHelp()
+    local hint = makerCfg.hint or {}
     BeginTextCommandDisplayHelp('STRING')
     AddTextComponentSubstringPlayerName(
+        (hint.exit or '~INPUT_FRONTEND_ACCEPT~ Back to menu') .. '~n~' ..
         '~INPUT_MOVE_UP_ONLY~~INPUT_MOVE_LEFT_ONLY~~INPUT_MOVE_DOWN_ONLY~~INPUT_MOVE_RIGHT_ONLY~ Move  ' ..
         '~INPUT_LOOK_LR~ Look  ~INPUT_COVER~ Up  ~INPUT_PICKUP~ Down  ' ..
-        '~INPUT_SPRINT~ Fast  ~INPUT_DUCK~ Slow  ~INPUT_FRONTEND_ACCEPT~ Back to menu'
+        '~INPUT_SPRINT~ Fast  ~INPUT_DUCK~ Slow'
     )
     EndTextCommandDisplayHelp(0, false, false, -1)
 end
@@ -77,6 +96,8 @@ local function freecamLoop()
         end
 
         DisableAllControlActions(0)
+        DisableControlAction(0, FRONTEND_PAUSE, true)
+        DisableControlAction(0, FRONTEND_PAUSE_ALT, true)
 
         freecam.yaw = freecam.yaw - GetDisabledControlNormal(0, 1) * 8.0
         freecam.pitch = math.max(-89.0, math.min(89.0, freecam.pitch - GetDisabledControlNormal(0, 2) * 8.0))
@@ -102,9 +123,11 @@ local function freecamLoop()
         SetCamRot(freecam.cam, freecam.pitch, 0.0, freecam.yaw, 2)
         showFreecamHelp()
 
-        if IsDisabledControlJustPressed(0, 191) then -- Enter: hold this view, reopen menu
-            stopFreecam(true, false)
-            break
+        for _, control in ipairs(exitControls()) do
+            if IsDisabledControlJustPressed(0, control) then -- hold this view, reopen menu
+                stopFreecam(true, false)
+                return
+            end
         end
 
         Wait(0)
@@ -132,6 +155,7 @@ local function startFreecam()
     end
 
     freecam.active = true
+    setUiBlocked(true)
     SendNUIMessage({ action = 'hide' })
     SetNuiFocus(false, false)
     CreateThread(freecamLoop)
@@ -287,6 +311,8 @@ local function readUiState(data)
         if data[key] ~= nil then editor[key] = tostring(data[key]) end
     end
     editor.name = editor.name:lower()
+    local maxLabel = tonumber(makerCfg.maxLabelLength)
+    if maxLabel and maxLabel > 0 then editor.label = editor.label:sub(1, math.floor(maxLabel)) end
     if type(data.editingName) == 'string' then editor.editingName = data.editingName end
     editor.flag = int(data.flag, editor.flag)
     local step = tonumber(data.step)
@@ -424,7 +450,12 @@ RegisterNUICallback('creator:close', function(_, cb)
 end)
 
 RegisterNetEvent('qbemotemenu:client:openEmoteCreator', function()
-    if source ~= 65535 or freecam.active then return end
+    if source ~= 65535 then return end
+    -- Running the command again while flying the camera is another way back to the menu.
+    if freecam.active then
+        stopFreecam(true, false)
+        return
+    end
     openMenu()
 end)
 
@@ -439,6 +470,7 @@ end)
 AddEventHandler('onResourceStop', function(resource)
     if resource ~= GetCurrentResourceName() then return end
     freecam.active = false
+    setUiBlocked(false)
     destroyCam()
     stopPreview()
 end)
