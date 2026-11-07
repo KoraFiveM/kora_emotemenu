@@ -12,10 +12,10 @@ description 'A configurable FiveM emote menu with a live React emote creator.'
 
 ui_page 'ui/dist/index.html'
 
-dependencies {
-    'kora_lib',
-    'kora_theme'
-}
+-- `dependency` singular, called once per dependency: this codebase's convention.
+-- The plural `dependencies { ... }` form does not enforce FXServer load order.
+dependency 'kora_lib'
+dependency 'kora_theme'
 
 shared_script '@kora_lib/init.lua'
 
