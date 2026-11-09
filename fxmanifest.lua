@@ -37,3 +37,6 @@ files {
     'ui/dist/index.html',
     'ui/dist/assets/**/*'
 }
+
+-- kora_qa: Gherkin test scenarios (converted legacy tests), see [kora]/kora_qa/README.md
+qa_feature 'tests/*.feature'
