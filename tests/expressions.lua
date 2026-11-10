@@ -97,7 +97,7 @@ for _, name in ipairs({ 'angry', 'stressed', 'smug', 'happy' }) do
     equal(h.overrides[1].name, h.config.expressions[name].anim, name .. ' override clip')
     equal(h.overrides[1].dict, 0, name .. ' override passes no dict')
     equal(h.loadedDicts['facials@gen_male@base'], true, name .. ' male dict requested')
-    equal(h.states['qbemotemenu:expression'], name, name .. ' state bag set')
+    equal(h.states['kora_emotemenu:expression'], name, name .. ' state bag set')
 end
 
 -- Female peds use the female dict.
@@ -114,26 +114,26 @@ h.tick()
 equal(h.overrides[1].name, 'mood_smug_1', 'expression re-applied while active')
 equal(h.exports.resetExpression(), true, 'reset works')
 equal(h.overrides[1], nil, 'default clears the override')
-equal(h.states['qbemotemenu:expression'], nil, 'reset clears the state bag')
+equal(h.states['kora_emotemenu:expression'], nil, 'reset clears the state bag')
 h.tick()
 equal(h.overrides[1], nil, 'cleared expression is not re-applied')
 
 -- Remote players: applied from their state bag, re-applied on a new ped, cleared when removed.
 h = host()
-h.bags[102] = { ['qbemotemenu:expression'] = 'happy' }
+h.bags[102] = { ['kora_emotemenu:expression'] = 'happy' }
 h.tick()
 equal(h.overrides[20].name, 'mood_happy_1', 'remote expression applied')
 equal(h.overrides[30], nil, 'players without a state keep their face')
-h.bags[102]['qbemotemenu:expression'] = 'angry'
+h.bags[102]['kora_emotemenu:expression'] = 'angry'
 h.tick()
 equal(h.overrides[20].name, 'mood_angry_1', 'remote change applied')
-h.bags[102]['qbemotemenu:expression'] = nil
+h.bags[102]['kora_emotemenu:expression'] = nil
 h.tick()
 equal(h.overrides[20], nil, 'remote expression cleared')
 
 -- Notices: off by default, then once per player+expression until the cooldown passes.
 h = host()
-h.bags[102] = { ['qbemotemenu:expression'] = 'angry', characterName = 'Alex Doe' }
+h.bags[102] = { ['kora_emotemenu:expression'] = 'angry', characterName = 'Alex Doe' }
 h.tick()
 equal(#h.notices, 0, 'no notice when disabled')
 h.config.expressionNotify.enabled = true
@@ -145,14 +145,14 @@ equal(#h.notices, 1, 'not repeated within the cooldown')
 h.now = h.now + h.config.expressionNotify.cooldown * 1000
 h.tick()
 equal(#h.notices, 2, 'repeated after the cooldown')
-h.bags[102]['qbemotemenu:expression'] = 'happy'
+h.bags[102]['kora_emotemenu:expression'] = 'happy'
 h.tick()
 equal(#h.notices, 3, 'a different expression is announced separately')
 h.bags[102].characterName = nil
-h.bags[102]['qbemotemenu:expression'] = 'smug'
+h.bags[102]['kora_emotemenu:expression'] = 'smug'
 h.tick()
 equal(h.notices[4].message, 'Someone appears to be smug', 'generic name fallback')
-h.bags[103] = { ['qbemotemenu:expression'] = 'angry' }
+h.bags[103] = { ['kora_emotemenu:expression'] = 'angry' }
 h.tick()
 equal(#h.notices, 4, 'players beyond the distance are not announced')
 h.config.expressionNotify.distance = 100
@@ -164,6 +164,6 @@ h = host()
 h.exports.setExpression('angry')
 h.onStop('kora_emotemenu')
 equal(h.overrides[1], nil, 'stop clears the override')
-equal(h.states['qbemotemenu:expression'], nil, 'stop clears the state bag')
+equal(h.states['kora_emotemenu:expression'], nil, 'stop clears the state bag')
 
 print(('kora_emotemenu expression checks passed: %d assertions'):format(checks))

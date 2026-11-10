@@ -52,7 +52,7 @@ local function host()
     assert(loadfile('config.lua', 't', env))()
     assert(loadfile('shared/emotes.lua', 't', env))()
     assert(loadfile('client/main.lua', 't', env))()
-    h.config, h.emotes = env.Config, env.QBEEmotes
+    h.config, h.emotes = env.Config, env.KoraEEmotes
     return h
 end
 

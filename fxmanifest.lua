@@ -4,8 +4,6 @@ lua54 'yes'
 use_experimental_fxv2_oal 'yes'
 
 name 'kora_emotemenu'
--- Keep the legacy resource name resolvable for exports['qbemotemenu'] callers.
-provide 'qbemotemenu'
 author 'qbcore2'
 version '1.0.0'
 description 'A configurable FiveM emote menu with a live React emote creator.'

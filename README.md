@@ -74,6 +74,6 @@ cuff scripts. `Config.blockWhenCuffed = false` lets cuffed players emote.
 - `setWalk(name)` / `resetWalk()`
 - `setExpression(name)` / `resetExpression()`
 
-The local player's replicated state bag publishes `qbemotemenu:active`,
-`qbemotemenu:last`, `qbemotemenu:walk`, and `qbemotemenu:expression` for
+The local player's replicated state bag publishes `kora_emotemenu:active`,
+`kora_emotemenu:last`, `kora_emotemenu:walk`, and `kora_emotemenu:expression` for
 integrations that need to observe the selected state.

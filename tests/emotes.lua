@@ -28,7 +28,7 @@ local function check(condition, message)
     assert(condition, message)
 end
 
-for name, emote in pairs(env.QBEEmotes) do
+for name, emote in pairs(env.KoraEEmotes) do
     check(type(emote.label) == 'string' and emote.label ~= '', name .. ': label')
     check(emote.hidden or env.Config.categories[emote.category], name .. ': visible emotes need a configured category')
     if emote.type == 'anim' then
@@ -40,13 +40,13 @@ for name, emote in pairs(env.QBEEmotes) do
         check(false, name .. ': type must be anim or scenario')
     end
     if emote.sync then
-        local partner = env.QBEEmotes[emote.sync.partner]
+        local partner = env.KoraEEmotes[emote.sync.partner]
         check(partner and partner.hidden, name .. ': sync partner must be a hidden emote')
     end
 end
 
 -- Dances must loop and animate the whole body (flag 49 is upper body only).
-for name, emote in pairs(env.QBEEmotes) do
+for name, emote in pairs(env.KoraEEmotes) do
     if emote.category == 'dance' then check(emote.flag == LOOPING_DANCE_FLAG, name .. ': dances use flag 1') end
 end
 

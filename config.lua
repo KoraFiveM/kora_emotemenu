@@ -2,7 +2,7 @@ Config = {}
 
 Config.command = 'emotes'
 Config.keybind = {
-    name = 'qbemotemenu_open',
+    name = 'kora_emotemenu_open',
     label = 'Open emote menu',
     defaultKey = 'F3',
 }
@@ -13,7 +13,7 @@ Config.menuStyle = 'radial'
 
 -- Per-emote prop tweaks, merged over shared/emotes.lua each time the emote plays.
 -- Example: Config.propOverrides.clipboard = { prop = { bone = 57005, offset = { x = 0.0, y = 0.0, z = 0.0 } } }
--- Bones are ped bone ids (see QBEBoneNames in shared/emotes.lua for names). Use the key `proptwo` for a second prop. Only the fields you set are replaced.
+-- Bones are ped bone ids (see KoraEBoneNames in shared/emotes.lua for names). Use the key `proptwo` for a second prop. Only the fields you set are replaced.
 Config.propOverrides = {}
 
 Config.syncDistance = 3.0

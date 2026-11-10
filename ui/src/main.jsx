@@ -74,7 +74,7 @@ function App() {
         setEditor({ ...INITIAL, ...(message.editor || {}), props: [] })
       } else if (message.action === 'theme') {
         setHighlight(message.primary)
-      } else if (message.action === 'qbtheme:override') {
+      } else if (message.action === 'kora_theme:override') {
         const primary = typeof message.data === 'string' ? message.data : message.data?.primary
         setHighlight(primary)
       } else if (message.action === 'hide' || message.action === 'close') {

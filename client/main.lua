@@ -6,17 +6,17 @@ local activeWalkClip = nil
 local activeWalkName = 'default'
 local cancelHintId = nil
 local cancelMonitorRunning = false
-local MENU_APP_ID = 'qbemotemenu:menu'
+local MENU_APP_ID = 'kora_emotemenu:menu'
 local appSelection
 
 local function notify(message, kind)
     Kora.notify.send({ title = 'Emotes', message = message, type = kind or 'info' })
 end
 
-for name, emote in pairs(QBEEmotes) do emotes[name] = Kora.util.deepClone(emote) end
+for name, emote in pairs(KoraEEmotes) do emotes[name] = Kora.util.deepClone(emote) end
 
 local function setState(key, value)
-    LocalPlayer.state:set(('qbemotemenu:%s'):format(key), value, true)
+    LocalPlayer.state:set(('kora_emotemenu:%s'):format(key), value, true)
 end
 
 -- `koraCuffed` is the replicated bag kora_police's server writes; the other two are
@@ -54,7 +54,7 @@ end
 -- GetEntityBoneIndexByName.
 local function attachProp(ped, config)
     local bone = config.bone
-    if type(bone) == 'string' and QBEBoneNames[bone] then bone = QBEBoneNames[bone] end
+    if type(bone) == 'string' and KoraEBoneNames[bone] then bone = KoraEBoneNames[bone] end
     local boneIndex = type(bone) == 'number' and GetPedBoneIndex(ped, bone) or GetEntityBoneIndexByName(ped, bone)
     if boneIndex == -1 then return false, ('Bone %s does not exist on the ped.'):format(tostring(bone)) end
 
@@ -139,7 +139,7 @@ local function cancelEmote(silent, skipSyncNotice)
     if DoesEntityExist(ped) then clearPedAnim(ped) end
     setState('active', false)
     if previous.syncPartner and not skipSyncNotice then
-        TriggerServerEvent('qbemotemenu:server:cancelSync')
+        TriggerServerEvent('kora_emotemenu:server:cancelSync')
     end
     if wasActive and not silent then notify('Emote cancelled.') end
     return wasActive
@@ -246,7 +246,7 @@ local function playEmote(name)
     if refusal then return false, refusal end
     local target = findClosestPlayer()
     if not target then return false, ('Move within %.1fm of another player.'):format(Config.syncDistance) end
-    TriggerServerEvent('qbemotemenu:server:sync', GetPlayerServerId(target), name)
+    TriggerServerEvent('kora_emotemenu:server:sync', GetPlayerServerId(target), name)
     return true
 end
 
@@ -276,7 +276,7 @@ local function setWalk(name, quiet)
 end
 
 local EXPRESSION_DICTS = { male = 'facials@gen_male@base', female = 'facials@gen_female@base' }
-local EXPRESSION_STATE = 'qbemotemenu:expression'
+local EXPRESSION_STATE = 'kora_emotemenu:expression'
 local activeExpression = nil -- nil means no override
 local activeExpressionName = 'default' -- the menu entry last chosen, including entries without an anim
 local remoteExpressions = {} -- [serverId] = { ped = handle, name = expression }
@@ -571,10 +571,10 @@ RegisterCommand('expression', function(_, args)
     if not ok then notify(err, 'error') end
 end, false)
 
-RegisterNetEvent('qbemotemenu:client:syncInvite', function(inviteId, playerName, emoteLabel)
+RegisterNetEvent('kora_emotemenu:client:syncInvite', function(inviteId, playerName, emoteLabel)
     CreateThread(function()
         if not canUse() then
-            TriggerServerEvent('qbemotemenu:server:respondSync', inviteId, false)
+            TriggerServerEvent('kora_emotemenu:server:respondSync', inviteId, false)
             return
         end
         local result = Kora.nui.openAlert({
@@ -583,37 +583,37 @@ RegisterNetEvent('qbemotemenu:client:syncInvite', function(inviteId, playerName,
             confirmLabel = 'Accept',
             cancelLabel = 'Decline',
         })
-        TriggerServerEvent('qbemotemenu:server:respondSync', inviteId, result ~= nil and result.confirmed == true and canUse())
+        TriggerServerEvent('kora_emotemenu:server:respondSync', inviteId, result ~= nil and result.confirmed == true and canUse())
     end)
 end)
 
-RegisterNetEvent('qbemotemenu:client:playSynced', function(name, partner)
+RegisterNetEvent('kora_emotemenu:client:playSynced', function(name, partner)
     local ok, err = playLocal(name)
     if not ok then
-        TriggerServerEvent('qbemotemenu:server:cancelSync')
+        TriggerServerEvent('kora_emotemenu:server:cancelSync')
         notify(err, 'error')
         return
     end
     active.syncPartner = partner
 end)
 
-RegisterNetEvent('qbemotemenu:client:cancelSynced', function(partner)
+RegisterNetEvent('kora_emotemenu:client:cancelSynced', function(partner)
     if active.syncPartner == partner then cancelEmote(true, true) end
 end)
 
 -- Emotes saved through the emote maker (server/emote_creator.lua).
-RegisterNetEvent('qbemotemenu:client:addEmotes', function(created)
+RegisterNetEvent('kora_emotemenu:client:addEmotes', function(created)
     if source ~= 65535 or type(created) ~= 'table' then return end
     for name, emote in pairs(created) do emotes[name] = Kora.util.deepClone(emote) end
 end)
 
-RegisterNetEvent('qbemotemenu:client:removeEmotes', function(names)
+RegisterNetEvent('kora_emotemenu:client:removeEmotes', function(names)
     if source ~= 65535 or type(names) ~= 'table' then return end
     for _, name in ipairs(names) do
         if type(name) == 'string' then emotes[name] = nil end
     end
 end)
-TriggerServerEvent('qbemotemenu:server:requestCreated')
+TriggerServerEvent('kora_emotemenu:server:requestCreated')
 
 exports('toggleMenu', openMenu)
 exports('playEmote', playEmote)

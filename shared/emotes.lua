@@ -1,7 +1,7 @@
 -- Ped bone ids accepted for prop emotes (GetPedBoneIndex). Names are accepted too
--- and resolve through QBEBoneNames, because MP peds do not expose PH_* skeleton names
+-- and resolve through KoraEBoneNames, because MP peds do not expose PH_* skeleton names
 -- to GetEntityBoneIndexByName.
-QBEBoneNames = {
+KoraEBoneNames = {
     SKEL_L_Hand = 18905,
     SKEL_R_Hand = 57005,
     PH_L_Hand = 60309,
@@ -15,7 +15,7 @@ QBEBoneNames = {
 -- registerEmote export; no third-party emote data is bundled here.
 -- Dances use flag 1 (looping, full body). Flag 49 is upper-body only, so the legs
 -- never danced.
-QBEEmotes = {
+KoraEEmotes = {
     wave = {
         label = 'Wave', category = 'general', type = 'anim',
         dict = 'friends@frj@ig_1', clip = 'wave_a', flag = 49,
@@ -88,8 +88,8 @@ QBEEmotes = {
 -- clients receive the same set from the server when they load, so they never
 -- depend on a file that changes at runtime.
 if IsDuplicityVersion() then
-    QBECreatedEmotes = json.decode(LoadResourceFile(GetCurrentResourceName(), 'shared/created.json') or '{}') or {}
-    for name, emote in pairs(QBECreatedEmotes) do
-        if QBEEmotes[name] == nil then QBEEmotes[name] = emote end
+    KoraECreatedEmotes = json.decode(LoadResourceFile(GetCurrentResourceName(), 'shared/created.json') or '{}') or {}
+    for name, emote in pairs(KoraECreatedEmotes) do
+        if KoraEEmotes[name] == nil then KoraEEmotes[name] = emote end
     end
 end

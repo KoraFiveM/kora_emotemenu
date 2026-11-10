@@ -64,7 +64,7 @@ local function openMenu()
     SetNuiFocus(true, true)
 end
 
-AddEventHandler('qbtheme:playerThemeChanged', function()
+AddEventHandler('kora_theme:playerThemeChanged', function()
     local ok, primary = pcall(function()
         return exports.kora_theme:getPlayerTheme() or exports.kora_theme:getPrimaryColor()
     end)
@@ -385,9 +385,9 @@ RegisterNUICallback('creator:action', function(data, cb)
     elseif action == 'freecam' then
         startFreecam()
     elseif action == 'load-list' then
-        TriggerServerEvent('qbemotemenu:server:requestEmotesForEdit')
+        TriggerServerEvent('kora_emotemenu:server:requestEmotesForEdit')
     elseif action == 'delete' and type(data.name) == 'string' then
-        TriggerServerEvent('qbemotemenu:server:deleteCreatedEmote', data.name)
+        TriggerServerEvent('kora_emotemenu:server:deleteCreatedEmote', data.name)
     elseif action == 'load' and type(data.name) == 'string' then
         local emote = availableEmotes[data.name]
         if emote then
@@ -425,13 +425,13 @@ RegisterNUICallback('creator:action', function(data, cb)
                 return
             end
         end
-        TriggerServerEvent('qbemotemenu:server:saveEmote', buildPayload())
+        TriggerServerEvent('kora_emotemenu:server:saveEmote', buildPayload())
     end
     pushState()
     cb({ ok = true })
 end)
 
-RegisterNetEvent('qbemotemenu:client:creatorEmotes', function(created)
+RegisterNetEvent('kora_emotemenu:client:creatorEmotes', function(created)
     if source ~= 65535 or type(created) ~= 'table' then return end
     availableEmotes = created
     local list = {}
@@ -442,7 +442,7 @@ RegisterNetEvent('qbemotemenu:client:creatorEmotes', function(created)
     SendNUIMessage({ action = 'savedEmotes', emotes = list })
 end)
 
-RegisterNetEvent('qbemotemenu:client:emoteDeleted', function(name)
+RegisterNetEvent('kora_emotemenu:client:emoteDeleted', function(name)
     if source ~= 65535 or type(name) ~= 'string' then return end
     availableEmotes[name] = nil
     if editor.editingName == name then
@@ -461,7 +461,7 @@ RegisterNUICallback('creator:close', function(_, cb)
     cb({ ok = true })
 end)
 
-RegisterNetEvent('qbemotemenu:client:openEmoteCreator', function()
+RegisterNetEvent('kora_emotemenu:client:openEmoteCreator', function()
     if source ~= 65535 then return end
     -- Running the command again while flying the camera is another way back to the menu.
     if freecam.active then
@@ -471,7 +471,7 @@ RegisterNetEvent('qbemotemenu:client:openEmoteCreator', function()
     openMenu()
 end)
 
-RegisterNetEvent('qbemotemenu:client:emoteSaved', function()
+RegisterNetEvent('kora_emotemenu:client:emoteSaved', function()
     if source ~= 65535 then return end
     stopPreview()
     editor = newEditor()

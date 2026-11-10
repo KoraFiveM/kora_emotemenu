@@ -90,11 +90,11 @@ local function buildEmote(payload)
 end
 
 local function persist()
-    local encoded = json.encode(QBECreatedEmotes, { indent = true, sort_keys = true })
+    local encoded = json.encode(KoraECreatedEmotes, { indent = true, sort_keys = true })
     return SaveResourceFile(RESOURCE, CREATED_FILE, encoded, -1)
 end
 
-RegisterNetEvent('qbemotemenu:server:saveEmote', function(payload)
+RegisterNetEvent('kora_emotemenu:server:saveEmote', function(payload)
     local source = source
 
     if not IsPlayerAceAllowed(source, 'command') then
@@ -109,43 +109,43 @@ RegisterNetEvent('qbemotemenu:server:saveEmote', function(payload)
     if editingName ~= nil then
         editingName = text(editingName, NAME_PATTERN, 32)
         editingName = editingName and editingName:lower()
-        if not editingName or not QBECreatedEmotes[editingName] then
+        if not editingName or not KoraECreatedEmotes[editingName] then
             return notify(source, 'That saved emote could not be found. Refresh the editor and try again.')
         end
     end
 
-    if QBEEmotes[name] and name ~= editingName then
+    if KoraEEmotes[name] and name ~= editingName then
         return notify(source, ('An emote named "%s" already exists.'):format(name))
     end
 
-    local previous = editingName and QBECreatedEmotes[editingName] or nil
-    if editingName then QBECreatedEmotes[editingName] = nil end
-    QBECreatedEmotes[name] = emote
+    local previous = editingName and KoraECreatedEmotes[editingName] or nil
+    if editingName then KoraECreatedEmotes[editingName] = nil end
+    KoraECreatedEmotes[name] = emote
     if not persist() then
-        QBECreatedEmotes[name] = nil
-        if editingName then QBECreatedEmotes[editingName] = previous end
+        KoraECreatedEmotes[name] = nil
+        if editingName then KoraECreatedEmotes[editingName] = previous end
         return notify(source, 'The emote could not be written to disk.')
     end
 
-    if editingName and editingName ~= name then QBEEmotes[editingName] = nil end
-    QBEEmotes[name] = emote
+    if editingName and editingName ~= name then KoraEEmotes[editingName] = nil end
+    KoraEEmotes[name] = emote
     if editingName and editingName ~= name then
-        TriggerClientEvent('qbemotemenu:client:removeEmotes', -1, { editingName })
+        TriggerClientEvent('kora_emotemenu:client:removeEmotes', -1, { editingName })
     end
-    TriggerClientEvent('qbemotemenu:client:addEmotes', -1, { [name] = emote })
-    TriggerClientEvent('qbemotemenu:client:emoteSaved', source)
+    TriggerClientEvent('kora_emotemenu:client:addEmotes', -1, { [name] = emote })
+    TriggerClientEvent('kora_emotemenu:client:emoteSaved', source)
     notify(source, ('%s "%s".'):format(editingName and 'Updated' or 'Saved', name), 'success')
 end)
 
-RegisterNetEvent('qbemotemenu:server:requestEmotesForEdit', function()
+RegisterNetEvent('kora_emotemenu:server:requestEmotesForEdit', function()
     local source = source
     if not IsPlayerAceAllowed(source, 'command') then
         return notify(source, 'You do not have permission to edit emotes.')
     end
-    TriggerClientEvent('qbemotemenu:client:creatorEmotes', source, QBECreatedEmotes)
+    TriggerClientEvent('kora_emotemenu:client:creatorEmotes', source, KoraECreatedEmotes)
 end)
 
-RegisterNetEvent('qbemotemenu:server:deleteCreatedEmote', function(rawName)
+RegisterNetEvent('kora_emotemenu:server:deleteCreatedEmote', function(rawName)
     local source = source
     if not IsPlayerAceAllowed(source, 'command') then
         return notify(source, 'You do not have permission to delete emotes.')
@@ -156,26 +156,26 @@ RegisterNetEvent('qbemotemenu:server:deleteCreatedEmote', function(rawName)
     if not name then return notify(source, 'Choose a valid saved emote.') end
     name = name:lower()
 
-    local previous = QBECreatedEmotes[name]
+    local previous = KoraECreatedEmotes[name]
     if not previous then return notify(source, 'That saved emote no longer exists.') end
 
-    QBECreatedEmotes[name] = nil
+    KoraECreatedEmotes[name] = nil
     if not persist() then
-        QBECreatedEmotes[name] = previous
+        KoraECreatedEmotes[name] = previous
         return notify(source, 'The emote could not be removed from disk.')
     end
 
-    QBEEmotes[name] = nil
-    TriggerClientEvent('qbemotemenu:client:removeEmotes', -1, { name })
-    TriggerClientEvent('qbemotemenu:client:emoteDeleted', source, name)
-    TriggerClientEvent('qbemotemenu:client:creatorEmotes', source, QBECreatedEmotes)
+    KoraEEmotes[name] = nil
+    TriggerClientEvent('kora_emotemenu:client:removeEmotes', -1, { name })
+    TriggerClientEvent('kora_emotemenu:client:emoteDeleted', source, name)
+    TriggerClientEvent('kora_emotemenu:client:creatorEmotes', source, KoraECreatedEmotes)
     notify(source, ('Deleted "%s".'):format(name), 'success')
 end)
 
 -- Clients don't read created.json themselves; they ask for the current set
 -- when they load, which also covers emotes created since the server started.
-RegisterNetEvent('qbemotemenu:server:requestCreated', function()
-    TriggerClientEvent('qbemotemenu:client:addEmotes', source, QBECreatedEmotes)
+RegisterNetEvent('kora_emotemenu:server:requestCreated', function()
+    TriggerClientEvent('kora_emotemenu:client:addEmotes', source, KoraECreatedEmotes)
 end)
 
 AddEventHandler('playerDropped', function()

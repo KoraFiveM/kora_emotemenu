@@ -39,8 +39,8 @@ local function host()
         env.source = src
         return assert(events[name], name)(...)
     end
-    function h.invite(src, target, emote) return h.fire('qbemotemenu:server:sync', src, target, emote or 'handshake') end
-    function h.respond(src, id, accepted) return h.fire('qbemotemenu:server:respondSync', src, id, accepted) end
+    function h.invite(src, target, emote) return h.fire('kora_emotemenu:server:sync', src, target, emote or 'handshake') end
+    function h.respond(src, id, accepted) return h.fire('kora_emotemenu:server:respondSync', src, id, accepted) end
     function h.count(name)
         local n = 0
         for _, event in ipairs(sent) do if event.name == name then n = n + 1 end end
@@ -50,12 +50,12 @@ local function host()
     return h
 end
 
-local invitation = 'qbemotemenu:client:syncInvite'
-local play = 'qbemotemenu:client:playSynced'
-local cancel = 'qbemotemenu:client:cancelSynced'
+local invitation = 'kora_emotemenu:client:syncInvite'
+local play = 'kora_emotemenu:client:playSynced'
+local cancel = 'kora_emotemenu:client:cancelSynced'
 
 -- A recipient cannot send another invite; the first pair remains cancellable.
-for _, cleanup in ipairs({ 'qbemotemenu:server:cancelSync', 'playerDropped' }) do
+for _, cleanup in ipairs({ 'kora_emotemenu:server:cancelSync', 'playerDropped' }) do
     local h = host()
     equal(h.invite(1, '2', 'HANDSHAKE'), nil, 'sync event keeps nil return')
     equal(h.sent[1].args[1], 1, 'first invitation ID')
@@ -92,7 +92,7 @@ do
     equal(h.count(invitation), 1, 'outgoing sender cannot become another recipient')
     h.respond(2, 1, true)
     equal(h.count(play), 2, 'first pair still starts')
-    h.fire('qbemotemenu:server:cancelSync', 1)
+    h.fire('kora_emotemenu:server:cancelSync', 1)
     equal(h.sent[#h.sent].target, 2, 'first pair still cancels reciprocally')
 end
 
@@ -124,4 +124,4 @@ for _, dropped in ipairs({ 1, 2 }) do
     equal(h.count(invitation), 2, 'pending disconnect releases both participants')
 end
 
-print(('qbemotemenu sync checks passed: %d assertions'):format(checks))
+print(('kora_emotemenu sync checks passed: %d assertions'):format(checks))

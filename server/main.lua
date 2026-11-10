@@ -8,14 +8,14 @@ Kora.commands.add('emoteMaker', 'Open the emote creator', nil, false, function(s
     if not IsPlayerAceAllowed(source, 'command') then
         return Kora.notify.send(source, { title = 'Emotes', message = 'You do not have permission to use this command.', type = 'error' })
     end
-    TriggerClientEvent('qbemotemenu:client:openEmoteCreator', source)
+    TriggerClientEvent('kora_emotemenu:client:openEmoteCreator', source)
 end)
 
 local function validSync(source, target, emoteName)
     target = tonumber(target)
     if not Kora.util.isInteger(target) or target <= 0 or target == source then return false, 'Choose another nearby player.' end
-    local emote = QBEEmotes[emoteName]
-    if not emote or not emote.sync or not QBEEmotes[emote.sync.partner] then return false, 'That shared emote is unavailable.' end
+    local emote = KoraEEmotes[emoteName]
+    if not emote or not emote.sync or not KoraEEmotes[emote.sync.partner] then return false, 'That shared emote is unavailable.' end
     local _, reason = Kora.world.resolveNearbyPlayer(source, target, { maxDistance = Config.syncDistance })
     if reason == 'routing_bucket_mismatch' then return false, 'That player is in another instance.' end
     if reason == 'too_far' then return false, 'That player is too far away.' end
@@ -23,7 +23,7 @@ local function validSync(source, target, emoteName)
     return true, emote
 end
 
-RegisterNetEvent('qbemotemenu:server:sync', function(target, emoteName)
+RegisterNetEvent('kora_emotemenu:server:sync', function(target, emoteName)
     local source = source
     if type(emoteName) ~= 'string' then return end
     if not requestCooldown.use(source) then return end
@@ -51,7 +51,7 @@ RegisterNetEvent('qbemotemenu:server:sync', function(target, emoteName)
     }
     pendingBySource[source] = invite
     pendingByTarget[target] = invite
-    TriggerClientEvent('qbemotemenu:client:syncInvite', target, invite.id, GetPlayerName(source) or ('Player %d'):format(source), emoteOrReason.label)
+    TriggerClientEvent('kora_emotemenu:client:syncInvite', target, invite.id, GetPlayerName(source) or ('Player %d'):format(source), emoteOrReason.label)
 
     SetTimeout(Config.syncInviteTTL, function()
         if pendingBySource[source] ~= invite then return end
@@ -61,7 +61,7 @@ RegisterNetEvent('qbemotemenu:server:sync', function(target, emoteName)
     end)
 end)
 
-RegisterNetEvent('qbemotemenu:server:respondSync', function(inviteId, accepted)
+RegisterNetEvent('kora_emotemenu:server:respondSync', function(inviteId, accepted)
     local target = source
     local invite = pendingByTarget[target]
     if not invite or invite.id ~= tonumber(inviteId) then return end
@@ -79,18 +79,18 @@ RegisterNetEvent('qbemotemenu:server:respondSync', function(inviteId, accepted)
 
     activePartner[invite.source] = target
     activePartner[target] = invite.source
-    TriggerClientEvent('qbemotemenu:client:playSynced', invite.source, invite.emote, target)
-    TriggerClientEvent('qbemotemenu:client:playSynced', target, invite.partnerEmote, invite.source)
+    TriggerClientEvent('kora_emotemenu:client:playSynced', invite.source, invite.emote, target)
+    TriggerClientEvent('kora_emotemenu:client:playSynced', target, invite.partnerEmote, invite.source)
 end)
 
-RegisterNetEvent('qbemotemenu:server:cancelSync', function()
+RegisterNetEvent('kora_emotemenu:server:cancelSync', function()
     local source = source
     local partner = activePartner[source]
     if not partner then return end
     activePartner[source] = nil
     if activePartner[partner] == source then
         activePartner[partner] = nil
-        TriggerClientEvent('qbemotemenu:client:cancelSynced', partner, source)
+        TriggerClientEvent('kora_emotemenu:client:cancelSynced', partner, source)
     end
 end)
 
@@ -106,6 +106,6 @@ AddEventHandler('playerDropped', function()
     activePartner[source] = nil
     if partner and activePartner[partner] == source then
         activePartner[partner] = nil
-        TriggerClientEvent('qbemotemenu:client:cancelSynced', partner, source)
+        TriggerClientEvent('kora_emotemenu:client:cancelSynced', partner, source)
     end
 end)
