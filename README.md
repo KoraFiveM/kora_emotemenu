@@ -77,3 +77,5 @@ cuff scripts. `Config.blockWhenCuffed = false` lets cuffed players emote.
 The local player's replicated state bag publishes `kora_emotemenu:active`,
 `kora_emotemenu:last`, `kora_emotemenu:walk`, and `kora_emotemenu:expression` for
 integrations that need to observe the selected state.
+
+Full documentation: see [docs/](docs/index.md).
