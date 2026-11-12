@@ -9,14 +9,16 @@ sidebar_position: 1
 
 Current version: see `version` in `fxmanifest.lua`.
 
-## Pages
+## Documentation map
 
-- [Installation](./installation.md) - dependencies, load order, first start.
-- [Features](./features.md) - what the menu, emotes, walks, expressions and shared emotes do.
+- [Installation](./installation.md) - manifest, load order, dependencies, default keybind, rebuilding the NUI.
+- [How to use](./how-to-use.md) - emote entry format, registering emotes from another resource, vehicles, cuffs and appearance persistence.
+- [Commands](./commands.md) - every chat command with arguments and access, keybind and permissions.
+- [API reference](./api/index.md) - client exports and state bag keys.
+  - [Client exports](./api/client-exports.md) - the ten `exports.kora_emotemenu` functions with parameters, returns and examples.
+  - [State bags and events](./api/state-and-events.md) - replicated state keys, net events, NUI callbacks.
 - [Configuration](./configuration.md) - every `Config` option in `config.lua`.
-- [Commands](./commands.md) - chat commands, keybind and permissions.
-- [Exports](./exports.md) - client exports and state bags for other resources.
-- [Events](./events.md) - net events used between client and server.
+- [Features](./features.md) - what the menu, emotes, walks, expressions and shared emotes do.
 - [Emote catalogue](./emotes.md) - the built-in emotes and the emote definition format.
 - [Emote Maker](./emote-maker.md) - the in-game creator for staff.
 - [Data storage](./data.md) - where created emotes and player preferences are saved (no database).

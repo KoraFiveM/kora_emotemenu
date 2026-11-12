@@ -5,7 +5,7 @@ sidebar_position: 8
 
 # Emote catalogue
 
-The built-in catalogue in `shared/emotes.lua` only uses Rockstar assets. Add your own entries to that table (the global `KoraEEmotes`), save them with the [Emote Maker](./emote-maker.md), or register them at runtime with the `registerEmote` export ([Exports](./exports.md)).
+The built-in catalogue in `shared/emotes.lua` only uses Rockstar assets. Add your own entries to that table (the global `KoraEEmotes`), save them with the [Emote Maker](./emote-maker.md), or register them at runtime with the `registerEmote` export ([Exports](./api/client-exports.md)).
 
 ## Built-in emotes
 
