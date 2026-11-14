@@ -4,7 +4,7 @@ lua54 'yes'
 use_experimental_fxv2_oal 'yes'
 
 name 'kora_emotemenu'
-author 'qbcore2'
+author 'Kora'
 version '0.2.1'
 description 'A configurable FiveM emote menu with a live React emote creator.'
 
@@ -32,6 +32,7 @@ server_script {
 }
 
 files {
+    'locales/*.lua',
     'ui/dist/index.html',
     'ui/dist/assets/**/*'
 }

@@ -10,7 +10,7 @@ local MENU_APP_ID = 'kora_emotemenu:menu'
 local appSelection
 
 local function notify(message, kind)
-    Kora.notify.send({ title = 'Emotes', message = message, type = kind or 'info' })
+    Kora.notify.send({ title = Kora.lang('title.emotes'), message = message, type = kind or 'info' })
 end
 
 for name, emote in pairs(KoraEEmotes) do emotes[name] = Kora.util.deepClone(emote) end
@@ -56,7 +56,7 @@ local function attachProp(ped, config)
     local bone = config.bone
     if type(bone) == 'string' and KoraEBoneNames[bone] then bone = KoraEBoneNames[bone] end
     local boneIndex = type(bone) == 'number' and GetPedBoneIndex(ped, bone) or GetEntityBoneIndexByName(ped, bone)
-    if boneIndex == -1 then return false, ('Bone %s does not exist on the ped.'):format(tostring(bone)) end
+    if boneIndex == -1 then return false, Kora.lang('error.bone_missing', tostring(bone)) end
 
     local offset, rotation, options = config.offset or {}, config.rotation or {}, config.options or {}
     local prop
@@ -71,7 +71,7 @@ local function attachProp(ped, config)
         prop = created
     end)
     if not loaded then return false, err end
-    if not prop then return false, 'The emote prop could not be created.' end
+    if not prop then return false, Kora.lang('error.prop_create_failed') end
     return prop
 end
 
@@ -93,10 +93,10 @@ end
 local function vehicleRefusal(name, emote)
     if not inVehicle(PlayerPedId()) then return nil end
     local vehicle = Config.vehicle or {}
-    if vehicle.allowEmotes == false then return 'Emotes cannot be used inside a vehicle.' end
-    if emote.type == 'scenario' or emote.standing then return 'That emote cannot be played inside a vehicle.' end
+    if vehicle.allowEmotes == false then return Kora.lang('error.emotes_disabled_in_vehicle') end
+    if emote.type == 'scenario' or emote.standing then return Kora.lang('error.emote_unavailable_in_vehicle') end
     for _, blocked in ipairs(vehicle.blockedInVehicle or {}) do
-        if blocked == name then return 'That emote cannot be played inside a vehicle.' end
+        if blocked == name then return Kora.lang('error.emote_unavailable_in_vehicle') end
     end
     return nil
 end
@@ -124,7 +124,7 @@ local function showCancelHint(name, emote)
     hideCancelHint()
     local hint = Config.cancelHint
     if not hint or hint.enabled == false or not Kora.textui or not needsCancelHint(emote) then return end
-    local ok, id = pcall(Kora.textui.show, hint.text or 'Cancel emote', { key = cancelKeyLabel(), position = hint.position })
+    local ok, id = pcall(Kora.textui.show, hint.text or Kora.lang('ui.cancel_emote'), { key = cancelKeyLabel(), position = hint.position })
     if ok then cancelHintId = id end
 end
 
@@ -141,7 +141,7 @@ local function cancelEmote(silent, skipSyncNotice)
     if previous.syncPartner and not skipSyncNotice then
         TriggerServerEvent('kora_emotemenu:server:cancelSync')
     end
-    if wasActive and not silent then notify('Emote cancelled.') end
+    if wasActive and not silent then notify(Kora.lang('success.emote_cancelled')) end
     return wasActive
 end
 
@@ -173,8 +173,8 @@ end
 
 local function playLocal(name)
     local emote = emotes[name]
-    if not emote then return false, 'That emote is not registered.' end
-    if not canUse() then return false, 'You cannot use emotes right now.' end
+    if not emote then return false, Kora.lang('error.emote_not_registered') end
+    if not canUse() then return false, Kora.lang('error.cannot_use_emotes') end
 
     local refusal = vehicleRefusal(name, emote)
     if refusal then return false, refusal end
@@ -195,9 +195,9 @@ local function playLocal(name)
         handle, err = Kora.anim.play(ped, emote.dict, emote.clip, { flag = flag, duration = emote.duration })
         played = handle ~= false
     else
-        return false, 'The emote has an unknown type.'
+        return false, Kora.lang('error.unknown_emote_type')
     end
-    if not played then return false, err or 'The animation could not be loaded.' end
+    if not played then return false, err or Kora.lang('error.animation_load_failed') end
 
     active.name = name
     if emote.blockMovement then active.controls = Kora.controls.acquire(blockedControlsFor(emote), { disablePlayerFiring = true }) end
@@ -207,7 +207,7 @@ local function playLocal(name)
             local prop, propErr = attachProp(ped, config)
             if not prop then
                 cancelEmote(true)
-                return false, propErr or 'The emote prop could not be created.'
+                return false, propErr or Kora.lang('error.prop_create_failed')
             end
             active.props[#active.props + 1] = prop
         end
@@ -239,27 +239,27 @@ end
 
 local function playEmote(name)
     local emote = emotes[name]
-    if not emote then return false, 'That emote is not registered.' end
+    if not emote then return false, Kora.lang('error.emote_not_registered') end
     if not emote.sync then return playLocal(name) end
-    if not canUse() then return false, 'You cannot use emotes right now.' end
+    if not canUse() then return false, Kora.lang('error.cannot_use_emotes') end
     local refusal = vehicleRefusal(name, emote)
     if refusal then return false, refusal end
     local target = findClosestPlayer()
-    if not target then return false, ('Move within %.1fm of another player.'):format(Config.syncDistance) end
+    if not target then return false, Kora.lang('error.sync_too_far', Config.syncDistance) end
     TriggerServerEvent('kora_emotemenu:server:sync', GetPlayerServerId(target), name)
     return true
 end
 
 local function setWalk(name, quiet)
     local walk = Config.walks[name]
-    if not walk then return false, 'That walk style is not configured.' end
+    if not walk then return false, Kora.lang('error.walk_not_configured') end
     local ped = PlayerPedId()
     if not quiet and inVehicle(ped) and (Config.vehicle or {}).upperBodyOnly ~= false then
-        return false, 'Walk styles cannot be changed inside a vehicle.'
+        return false, Kora.lang('error.walk_in_vehicle')
     end
     if walk.clipset then
         local loaded, err = Kora.stream.loadClipSet(walk.clipset)
-        if not loaded then return false, err or 'The walk style could not be loaded.' end
+        if not loaded then return false, err or Kora.lang('error.walk_load_failed') end
         if activeWalkClip and activeWalkClip ~= walk.clipset then RemoveClipSet(activeWalkClip) end
         SetPedMovementClipset(ped, walk.clipset, 0.25)
         activeWalkClip = walk.clipset
@@ -271,7 +271,7 @@ local function setWalk(name, quiet)
     activeWalkName = name
     setState('walk', name)
     if Config.persistAppearance then SetResourceKvp('walk', name) end
-    if not quiet then notify(('Walk style: %s'):format(walk.label)) end
+    if not quiet then notify(Kora.lang('success.walk_style', walk.label)) end
     return true
 end
 
@@ -312,7 +312,7 @@ local function expressionNoticeName(serverId)
         if ok then name = value end
     end
     if not name or name == '' then name = Player(serverId).state.characterName end
-    if type(name) ~= 'string' or name == '' then return 'Someone' end
+    if type(name) ~= 'string' or name == '' then return Kora.lang('ui.someone') end
     return name
 end
 
@@ -326,7 +326,7 @@ local function noticeRemoteExpression(serverId, ped, name)
     if noticeTimes[key] and now - noticeTimes[key] < settings.cooldown * 1000 then return end
     noticeTimes[key] = now
     local word = expression.notice or (expression.label or name):lower()
-    notify(('%s appears to be %s'):format(expressionNoticeName(serverId), word))
+    notify(Kora.lang('ui.expression_notice', expressionNoticeName(serverId), word))
 end
 
 -- Re-applies the local expression (other emotes, death and respawn reset facial overrides) and
@@ -368,13 +368,13 @@ end
 
 local function setExpression(name, quiet)
     local expression = Config.expressions[name]
-    if not expression then return false, 'That expression is not configured.' end
+    if not expression then return false, Kora.lang('error.expression_not_configured') end
     activeExpression = expression.anim and name or nil
     activeExpressionName = name
     applyExpression(PlayerPedId(), activeExpression)
     setState('expression', activeExpression)
     if Config.persistAppearance then SetResourceKvp('expression', name) end
-    if not quiet then notify(('Expression: %s'):format(expression.label)) end
+    if not quiet then notify(Kora.lang('success.expression', expression.label)) end
     return true
 end
 
@@ -403,7 +403,7 @@ local function optionItems(values, prefix, current)
     for name, entry in pairs(values or {}) do
         local item = { id = prefix .. name, label = entry.label or name, icon = 'Circle' }
         if name == current then
-            item.icon, item.iconColor, item.description = 'CircleCheck', color, 'Currently active'
+            item.icon, item.iconColor, item.description = 'CircleCheck', color, Kora.lang('ui.currently_active')
         end
         items[#items + 1] = item
     end
@@ -422,9 +422,9 @@ local function menuItems()
     table.sort(items, function(a, b) return a.label < b.label end)
     -- An option group with nothing in it would open as an empty page, so leave it out.
     local walks, expressions = optionItems(Config.walks, 'walk:', activeWalkName), optionItems(Config.expressions, 'expression:', activeExpressionName)
-    if #walks > 0 then items[#items + 1] = { id = 'walk', label = 'Walk style', icon = 'Footprints', submenu = { title = 'Walk style', items = walks } } end
-    if #expressions > 0 then items[#items + 1] = { id = 'expression', label = 'Expression', icon = 'ScanFace', submenu = { title = 'Expression', items = expressions } } end
-    items[#items + 1] = { id = 'cancel', label = 'Cancel emote', icon = 'CircleX', disabled = active.name == nil, description = active.name and 'Stop the current emote' or 'No emote is playing' }
+    if #walks > 0 then items[#items + 1] = { id = 'walk', label = Kora.lang('ui.walk_style'), icon = 'Footprints', submenu = { title = Kora.lang('ui.walk_style'), items = walks } } end
+    if #expressions > 0 then items[#items + 1] = { id = 'expression', label = Kora.lang('ui.expression'), icon = 'ScanFace', submenu = { title = Kora.lang('ui.expression'), items = expressions } } end
+    items[#items + 1] = { id = 'cancel', label = Kora.lang('ui.cancel_emote'), icon = 'CircleX', disabled = active.name == nil, description = active.name and Kora.lang('ui.stop_current_emote') or Kora.lang('ui.no_emote_playing') }
     return items
 end
 
@@ -433,7 +433,7 @@ local function openContextPages(items)
     local page, trail = items, {}
     while true do
         local rows = {}
-        if #trail > 0 then rows[1] = { id = 'menu:back', label = 'Back', icon = 'ChevronLeft' } end
+        if #trail > 0 then rows[1] = { id = 'menu:back', label = Kora.lang('ui.back'), icon = 'ChevronLeft' } end
         for _, item in ipairs(page) do rows[#rows + 1] = item end
         local result = Kora.nui.openContextMenu(rows)
         if not result or result.cancelled then return result end
@@ -457,15 +457,15 @@ local function appNavigation(items)
         local rows = {}
         if item.submenu then
             for _, entry in ipairs(item.submenu.items) do
-                rows[#rows + 1] = { id = entry.id, label = entry.label, description = entry.description, icon = entry.icon, action = { id = entry.id, label = 'Select' } }
+                rows[#rows + 1] = { id = entry.id, label = entry.label, description = entry.description, icon = entry.icon, action = { id = entry.id, label = Kora.lang('ui.select') } }
             end
         else
-            rows[1] = { id = item.id, label = item.label, description = item.description, icon = item.icon, action = { id = item.id, label = 'Select', disabled = item.disabled } }
+            rows[1] = { id = item.id, label = item.label, description = item.description, icon = item.icon, action = { id = item.id, label = Kora.lang('ui.select'), disabled = item.disabled } }
         end
         local title = item.submenu and item.submenu.title or item.label
         local block = { type = 'list', id = item.id .. ':list', searchable = item.submenu ~= nil, items = rows }
         -- kora_lib wants a title on every empty block.
-        if #rows == 0 then block = { type = 'empty', id = item.id .. ':empty', title = title, description = 'Nothing to show here yet.' } end
+        if #rows == 0 then block = { type = 'empty', id = item.id .. ':empty', title = title, description = Kora.lang('ui.nothing_to_show') } end
         navigation[#navigation + 1] = {
             id = item.id, label = item.label, icon = item.icon,
             content = { title = title, blocks = { block } },
@@ -482,10 +482,10 @@ local function registerMenuApp()
     if appRegistered then return true end
     local ok, err = pcall(Kora.nui.registerApp, {
         id = MENU_APP_ID,
-        title = 'Emotes',
+        title = Kora.lang('title.emotes'),
         icon = 'Smile',
         layout = 'compact',
-        navigation = { { id = 'empty', label = 'Emotes', content = { blocks = { { type = 'empty', title = 'Emotes', description = 'Open the emote menu to choose an emote.' } } } } },
+        navigation = { { id = 'empty', label = Kora.lang('title.emotes'), content = { blocks = { { type = 'empty', title = Kora.lang('title.emotes'), description = Kora.lang('ui.open_emote_menu') } } } } },
         onAction = function(actionId)
             appSelection = actionId
             return { close = true }
@@ -532,7 +532,7 @@ end
 
 local function openMenu()
     if menuOpen then return end
-    if not canUse() then return notify('You cannot use emotes right now.', 'error') end
+    if not canUse() then return notify(Kora.lang('error.cannot_use_emotes'), 'error') end
     menuOpen = true
     local result = openStyledMenu(menuItems())
     menuOpen = false
@@ -578,10 +578,10 @@ RegisterNetEvent('kora_emotemenu:client:syncInvite', function(inviteId, playerNa
             return
         end
         local result = Kora.nui.openAlert({
-            title = 'Shared emote request',
-            message = ('%s wants to perform %s with you.'):format(playerName, emoteLabel),
-            confirmLabel = 'Accept',
-            cancelLabel = 'Decline',
+            title = Kora.lang('title.shared_emote_request'),
+            message = Kora.lang('ui.shared_emote_invite', playerName, emoteLabel),
+            confirmLabel = Kora.lang('ui.accept'),
+            cancelLabel = Kora.lang('ui.decline'),
         })
         TriggerServerEvent('kora_emotemenu:server:respondSync', inviteId, result ~= nil and result.confirmed == true and canUse())
     end)
