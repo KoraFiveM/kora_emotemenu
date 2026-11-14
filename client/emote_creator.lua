@@ -2,6 +2,32 @@ local MAX_PROPS = 2
 local DEFAULT_STEP = 0.1
 local CREATOR_CATEGORIES = { 'general', 'dance', 'props' }
 
+local function uiStrings()
+    local keys = {
+        'eyebrow', 'editing', 'title', 'new_emote', 'edit_saved', 'close', 'preview_playing', 'preview_ready',
+        'freecam', 'freecam_back', 'freecam_controls', 'stop_preview', 'play_preview', 'animation_eyebrow', 'animation_details', 'emote_name',
+        'emote_name_example', 'display_label', 'display_label_example', 'characters', 'animation_dictionary',
+        'animation_clip', 'category', 'animation_flag', 'attachments_eyebrow', 'props', 'add_prop', 'no_props',
+        'add_object', 'prop', 'model_name_hint', 'remove', 'object_model', 'object_model_hint', 'ped_bone_id',
+        'bone_example', 'adjustment_amount', 'adjustment_hint', 'offset', 'position_relative', 'rotation',
+        'angle_axes', 'preview_changes', 'apply_model', 'close_preview_hint', 'save_changes', 'save_emote',
+        'saved_emotes', 'edit_emote', 'search_saved', 'delete', 'loading_saved', 'no_saved', 'no_search_match',
+        'remove_saved', 'delete_confirm', 'delete_description', 'delete_emote', 'cancel', 'decrease', 'increase',
+        'category_general', 'category_dance', 'category_props',
+    }
+    local result = {}
+    for _, key in ipairs(keys) do result[key] = Kora.lang('maker.' .. key) end
+    return result
+end
+
+local function categoryLabels()
+    return {
+        general = Kora.lang('maker.category_general'),
+        dance = Kora.lang('maker.category_dance'),
+        props = Kora.lang('maker.category_props'),
+    }
+end
+
 local function newEditor()
     return { name = '', label = '', category = 'general', dict = '', clip = '', flag = 49, step = DEFAULT_STEP, props = {} }
 end
@@ -28,7 +54,7 @@ local function setUiBlocked(blocked)
 end
 
 local function notify(message, kind)
-    Kora.notify.send({ title = 'Emote Maker', message = message, type = kind or 'info' })
+    Kora.notify.send({ title = Kora.lang('title.emote_maker'), message = message, type = kind or 'info' })
 end
 
 local function num(value, fallback)
@@ -58,7 +84,7 @@ local function openMenu()
 
     local maxLabel = tonumber(makerCfg.maxLabelLength)
     SendNUIMessage({
-        action = 'open', editor = editor, categories = CREATOR_CATEGORIES, primary = primary,
+        action = 'open', editor = editor, categories = CREATOR_CATEGORIES, categoryLabels = categoryLabels(), strings = uiStrings(), primary = primary,
         maxLabelLength = maxLabel and maxLabel > 0 and math.floor(maxLabel) or nil,
     })
     SetNuiFocus(true, true)
@@ -85,10 +111,8 @@ local HELP_ENTRY = 'KORA_EMOTE_MAKER_FREECAM'
 local function registerFreecamHelp()
     local hint = makerCfg.hint or {}
     AddTextEntry(HELP_ENTRY,
-        (hint.exit or '~INPUT_FRONTEND_ACCEPT~ Back to menu') .. '~n~' ..
-        '~INPUT_MOVE_UP_ONLY~~INPUT_MOVE_LEFT_ONLY~~INPUT_MOVE_DOWN_ONLY~~INPUT_MOVE_RIGHT_ONLY~ Move  ' ..
-        '~INPUT_LOOK_LR~ Look  ~INPUT_COVER~ Up  ~INPUT_PICKUP~ Down  ' ..
-        '~INPUT_SPRINT~ Fast  ~INPUT_DUCK~ Slow'
+        (hint.exit or Kora.lang('maker.freecam_back')) .. '~n~' ..
+        Kora.lang('maker.freecam_controls')
     )
 end
 
@@ -225,7 +249,7 @@ local function attachProp(index)
 
     local model = joaat(config.modelName)
     if not IsModelInCdimage(model) or not IsModelValid(model) then
-        notify(('Invalid prop model: %s'):format(config.modelName), 'error')
+        notify(Kora.lang('error.invalid_prop_model', config.modelName), 'error')
         return false
     end
 
@@ -239,7 +263,7 @@ local function attachProp(index)
     SetModelAsNoLongerNeeded(model)
 
     if not DoesEntityExist(entity) then
-        notify(('Could not create prop %d.'):format(index), 'error')
+        notify(Kora.lang('error.preview_prop_create_failed', index), 'error')
         return false
     end
 
@@ -253,7 +277,7 @@ end
 
 local function playPreview()
     if editor.dict == '' or editor.clip == '' then
-        notify('Enter an animation dictionary and clip first.', 'error')
+        notify(Kora.lang('error.enter_animation_first'), 'error')
         return false
     end
 
@@ -261,7 +285,7 @@ local function playPreview()
 
     local handle, err = Kora.anim.play(PlayerPedId(), editor.dict, editor.clip, { flag = editor.flag })
     if not handle then
-        notify(err or 'The animation could not be played.', 'error')
+        notify(err or Kora.lang('error.animation_play_failed'), 'error')
         return false
     end
 
@@ -274,7 +298,7 @@ local function playPreview()
         end
     end
 
-    notify('Preview playing.')
+    notify(Kora.lang('success.preview_playing'))
     return true
 end
 
@@ -304,14 +328,14 @@ local function buildPayload()
 end
 
 local REQUIRED_FIELDS = {
-    { 'name', 'a name' },
-    { 'label', 'a label' },
-    { 'dict', 'an animation dictionary' },
-    { 'clip', 'an animation clip' },
+    { 'name', 'error.enter_name_first' },
+    { 'label', 'error.enter_label_first' },
+    { 'dict', 'error.enter_dictionary_first' },
+    { 'clip', 'error.enter_clip_first' },
 }
 
 local function pushState(action)
-    SendNUIMessage({ action = action or 'state', editor = editor, categories = CREATOR_CATEGORIES, playing = preview.playing })
+    SendNUIMessage({ action = action or 'state', editor = editor, categories = CREATOR_CATEGORIES, categoryLabels = categoryLabels(), strings = uiStrings(), playing = preview.playing })
 end
 
 local function readUiState(data)
@@ -420,7 +444,7 @@ RegisterNUICallback('creator:action', function(data, cb)
     elseif action == 'save' then
         for _, required in ipairs(REQUIRED_FIELDS) do
             if editor[required[1]] == '' then
-                notify(('Enter %s first.'):format(required[2]), 'error')
+                notify(Kora.lang(required[2]), 'error')
                 cb({ ok = false })
                 return
             end
