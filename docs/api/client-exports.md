@@ -40,7 +40,7 @@ Shows a "You cannot use emotes right now." error notification instead of opening
 
 ### `exports.kora_emotemenu:playEmote(name)`
 
-Plays a registered emote by name, going through the same vehicle/cuff/sync checks as the menu. For a `sync`-flagged emote this sends a shared-emote invite to the nearest player within `Config.syncDistance` instead of playing immediately.
+Plays a registered emote by name, going through the same vehicle/cuff/sync checks as the menu. For a `sync`-flagged emote this sends a shared-emote invite to the nearest player within `Config.syncDistance` instead of playing immediately. Like the menu, it shows the cancel hint and lets the cancel key, ragdoll or cuffs stop the emote. If your resource controls how long the emote lasts (for example a progress bar), use the local event `kora_emotemenu:client:playProgressEmote` instead; it plays the emote without the hint or the monitor. See [State bags and events](state-and-events.md).
 
 **Parameters**
 
