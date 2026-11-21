@@ -149,7 +149,9 @@ local function startCancelMonitor()
     if cancelMonitorRunning then return end
     cancelMonitorRunning = true
     CreateThread(function()
-        while active.name do
+        -- `managed` emotes (playProgressEmote) are stopped by their caller, so a monitor
+        -- left over from a replaced menu emote must not keep watching them.
+        while active.name and not active.managed do
             if not canUse() or IsControlJustPressed(0, Config.cancelControl) or IsPedRagdoll(PlayerPedId()) then
                 cancelEmote(true)
             end
@@ -171,7 +173,9 @@ local function blockedControlsFor(emote)
     return controls
 end
 
-local function playLocal(name)
+-- opts.noCancelUi skips the cancel hint and the cancel monitor; the caller owns the
+-- emote's lifetime and stops it itself (see playProgressEmote below).
+local function playLocal(name, opts)
     local emote = emotes[name]
     if not emote then return false, Kora.lang('error.emote_not_registered') end
     if not canUse() then return false, Kora.lang('error.cannot_use_emotes') end
@@ -200,6 +204,7 @@ local function playLocal(name)
     if not played then return false, err or Kora.lang('error.animation_load_failed') end
 
     active.name = name
+    active.managed = opts and opts.noCancelUi == true or nil
     if emote.blockMovement then active.controls = Kora.controls.acquire(blockedControlsFor(emote), { disablePlayerFiring = true }) end
     for _, slot in ipairs({ 'prop', 'proptwo' }) do
         local config = getPropConfig(name, slot)
@@ -214,9 +219,11 @@ local function playLocal(name)
     end
     setState('active', name)
     setState('last', name)
-    showCancelHint(name, emote)
     lastEmote = name
-    startCancelMonitor()
+    if not (opts and opts.noCancelUi) then
+        showCancelHint(name, emote)
+        startCancelMonitor()
+    end
     return true
 end
 
@@ -599,6 +606,28 @@ end)
 
 RegisterNetEvent('kora_emotemenu:client:cancelSynced', function(partner)
     if active.syncPartner == partner then cancelEmote(true, true) end
+end)
+
+-- Local-only (not a net event): lets another client resource, e.g. kora_lib's
+-- progress bar, start an emote without the cancel hint or cancel monitor. The caller
+-- stops it with exports.kora_emotemenu:cancelEmote(true). Shared (sync) emotes are
+-- refused because they need a partner invite.
+AddEventHandler('kora_emotemenu:client:playProgressEmote', function(name)
+    if type(name) ~= 'string' or name == '' then
+        return Kora.logging.warn('progress_emote.invalid_name', 'playProgressEmote needs an emote name', { name = tostring(name) })
+    end
+    name = name:lower()
+    local emote = emotes[name]
+    if not emote then
+        return Kora.logging.warn('progress_emote.not_registered', 'playProgressEmote: emote is not registered', { name = name })
+    end
+    if emote.sync then
+        return Kora.logging.warn('progress_emote.sync_refused', 'playProgressEmote: shared emotes cannot be played from a progress bar', { name = name })
+    end
+    local ok, err = playLocal(name, { noCancelUi = true })
+    if not ok then
+        Kora.logging.warn('progress_emote.failed', 'playProgressEmote: emote did not start', { name = name, error = tostring(err) })
+    end
 end)
 
 -- Emotes saved through the emote maker (server/emote_creator.lua).

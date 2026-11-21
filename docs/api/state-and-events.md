@@ -37,7 +37,23 @@ The resource also writes `koraUiBlocked` (not replicated) while the Emote Maker 
 
 ## Event reference
 
-These events are internal to the resource. The resource defines no local (non-net) events of its own and no server callbacks. Do not trigger them from other resources.
+The net events below are internal to the resource; do not trigger them from other resources. The one public event is the local (client-only) `kora_emotemenu:client:playProgressEmote`, described next. The resource has no server callbacks.
+
+### Local client event (other resources)
+
+| Event | Payload | Behaviour |
+| --- | --- | --- |
+| `kora_emotemenu:client:playProgressEmote` | `emoteName` (string) | Plays the emote locally without the cancel hint and without the cancel-key/ragdoll/cuff monitor. The caller owns the emote and must stop it with `exports.kora_emotemenu:cancelEmote(true)`. Names are lower-cased. Unknown names and shared (`sync`) emotes are refused with a warning log and nothing plays. The usual checks still apply (dead, cuffed, vehicle rules), and an emote that is already playing is replaced. |
+
+It is registered with `AddEventHandler`, not `RegisterNetEvent`, so it can only be triggered from client code on the same machine. kora_lib's progress bar uses it for its `emote` option:
+
+```lua
+TriggerEvent('kora_emotemenu:client:playProgressEmote', 'clipboard')
+-- ... later, when the action ends:
+exports.kora_emotemenu:cancelEmote(true)
+```
+
+Whether the emote started can be read straight after `TriggerEvent` from `LocalPlayer.state['kora_emotemenu:active']`, because local event handlers run synchronously.
 
 ### Server events (client to server)
 
