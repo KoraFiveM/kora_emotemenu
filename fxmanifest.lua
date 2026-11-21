@@ -5,7 +5,7 @@ use_experimental_fxv2_oal 'yes'
 
 name 'kora_emotemenu'
 author 'Kora'
-version '0.2.1'
+version '0.2.2'
 description 'A configurable FiveM emote menu with a live React emote creator.'
 
 ui_page 'ui/dist/index.html'
