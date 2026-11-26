@@ -6,7 +6,7 @@ local nextInviteId = 0
 
 Kora.commands.add('emoteMaker', Kora.lang('command.open_emote_creator'), nil, false, function(source)
     if not IsPlayerAceAllowed(source, 'command') then
-        return Kora.notify.send(source, { title = Kora.lang('title.emotes'), message = Kora.lang('error.command_permission'), type = 'error' })
+        return Kora.bridge.sendNotify(source, { title = Kora.lang('title.emotes'), message = Kora.lang('error.command_permission'), type = 'error' })
     end
     TriggerClientEvent('kora_emotemenu:client:openEmoteCreator', source)
 end)
@@ -31,13 +31,13 @@ RegisterNetEvent('kora_emotemenu:server:sync', function(target, emoteName)
     local current = GetGameTimer()
     local ok, emoteOrReason = validSync(source, target, emoteName)
     if not ok then
-        return Kora.notify.send(source, { title = Kora.lang('title.emotes'), message = emoteOrReason, type = 'error' })
+        return Kora.bridge.sendNotify(source, { title = Kora.lang('title.emotes'), message = emoteOrReason, type = 'error' })
     end
     target = tonumber(target)
     if pendingBySource[source] or pendingByTarget[source]
         or pendingBySource[target] or pendingByTarget[target]
         or activePartner[source] or activePartner[target] then
-        return Kora.notify.send(source, { title = Kora.lang('title.emotes'), message = Kora.lang('error.sync_already_pending'), type = 'error' })
+        return Kora.bridge.sendNotify(source, { title = Kora.lang('title.emotes'), message = Kora.lang('error.sync_already_pending'), type = 'error' })
     end
 
     nextInviteId = nextInviteId + 1
@@ -57,7 +57,7 @@ RegisterNetEvent('kora_emotemenu:server:sync', function(target, emoteName)
         if pendingBySource[source] ~= invite then return end
         pendingBySource[source] = nil
         pendingByTarget[target] = nil
-        Kora.notify.send(source, { title = Kora.lang('title.emotes'), message = Kora.lang('error.sync_request_expired'), type = 'error' })
+        Kora.bridge.sendNotify(source, { title = Kora.lang('title.emotes'), message = Kora.lang('error.sync_request_expired'), type = 'error' })
     end)
 end)
 
@@ -69,12 +69,12 @@ RegisterNetEvent('kora_emotemenu:server:respondSync', function(inviteId, accepte
     pendingBySource[invite.source] = nil
 
     if accepted ~= true or invite.expiresAt < GetGameTimer() then
-        return Kora.notify.send(invite.source, { title = Kora.lang('title.emotes'), message = Kora.lang('error.sync_request_declined'), type = 'error' })
+        return Kora.bridge.sendNotify(invite.source, { title = Kora.lang('title.emotes'), message = Kora.lang('error.sync_request_declined'), type = 'error' })
     end
 
     local ok, emoteOrReason = validSync(invite.source, target, invite.emote)
     if not ok or emoteOrReason.sync.partner ~= invite.partnerEmote then
-        return Kora.notify.send(invite.source, { title = Kora.lang('title.emotes'), message = ok and Kora.lang('error.sync_emote_changed') or emoteOrReason, type = 'error' })
+        return Kora.bridge.sendNotify(invite.source, { title = Kora.lang('title.emotes'), message = ok and Kora.lang('error.sync_emote_changed') or emoteOrReason, type = 'error' })
     end
 
     activePartner[invite.source] = target

@@ -10,7 +10,7 @@ local MENU_APP_ID = 'kora_emotemenu:menu'
 local appSelection
 
 local function notify(message, kind)
-    Kora.notify.send({ title = Kora.lang('title.emotes'), message = message, type = kind or 'info' })
+    Kora.bridge.sendNotify({ title = Kora.lang('title.emotes'), message = message, type = kind or 'info' })
 end
 
 for name, emote in pairs(KoraEEmotes) do emotes[name] = Kora.util.deepClone(emote) end
@@ -105,7 +105,7 @@ local function hideCancelHint()
     if not cancelHintId then return end
     local id = cancelHintId
     cancelHintId = nil
-    if Kora.textui then Kora.textui.hide(id) end
+    if Kora.textui then Kora.bridge.hideText(id) end
 end
 
 -- Only emotes that do not stop by themselves need a reminder.
@@ -124,7 +124,7 @@ local function showCancelHint(name, emote)
     hideCancelHint()
     local hint = Config.cancelHint
     if not hint or hint.enabled == false or not Kora.textui or not needsCancelHint(emote) then return end
-    local ok, id = pcall(Kora.textui.show, hint.text or Kora.lang('ui.cancel_emote'), { key = cancelKeyLabel(), position = hint.position })
+    local ok, id = pcall(Kora.bridge.drawText, hint.text or Kora.lang('ui.cancel_emote'), { key = cancelKeyLabel(), position = hint.position })
     if ok then cancelHintId = id end
 end
 

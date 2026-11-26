@@ -10,7 +10,7 @@ local ASSET_PATTERN = '^[%w_@%.%-%^]+$'
 local CREATOR_CATEGORIES = { general = true, dance = true, props = true }
 
 local function notify(source, message, kind)
-    Kora.notify.send(source, { title = Kora.lang('title.emote_maker'), message = message, type = kind or 'error' })
+    Kora.bridge.sendNotify(source, { title = Kora.lang('title.emote_maker'), message = message, type = kind or 'error' })
 end
 
 local function text(value, pattern, maxLength)
