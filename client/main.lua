@@ -10,7 +10,7 @@ local MENU_APP_ID = 'kora_emotemenu:menu'
 local appSelection
 
 local function notify(message, kind)
-    Kora.notify.send({ title = Kora.lang('title.emotes'), message = message, type = kind or 'info' })
+    Kora.bridge.sendNotify({ title = Kora.lang('title.emotes'), message = message, type = kind or 'info' })
 end
 
 for name, emote in pairs(KoraEEmotes) do emotes[name] = Kora.util.deepClone(emote) end

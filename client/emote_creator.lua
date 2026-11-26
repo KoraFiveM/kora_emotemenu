@@ -54,7 +54,7 @@ local function setUiBlocked(blocked)
 end
 
 local function notify(message, kind)
-    Kora.notify.send({ title = Kora.lang('title.emote_maker'), message = message, type = kind or 'info' })
+    Kora.bridge.sendNotify({ title = Kora.lang('title.emote_maker'), message = message, type = kind or 'info' })
 end
 
 local function num(value, fallback)
